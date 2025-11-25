@@ -1,6 +1,6 @@
 # Process Monitor
 
-This guide explains how to use the {ruby Async::Container::Supervisor::ProcessMonitor} to log CPU and memory metrics for your worker processes.
+This guide explains how to use the {ruby Async::Service::Supervisor::ProcessMonitor} to log CPU and memory metrics for your worker processes.
 
 ## Overview
 
@@ -16,7 +16,7 @@ Use the `ProcessMonitor` when you need:
 - **Debugging assistance**: Correlate resource usage with application behavior.
 - **Cost optimization**: Right-size infrastructure based on actual usage.
 
-Unlike the {ruby Async::Container::Supervisor::MemoryMonitor}, which takes action when limits are exceeded, the `ProcessMonitor` is purely observational - it logs metrics without interfering with worker processes.
+Unlike the {ruby Async::Service::Supervisor::MemoryMonitor}, which takes action when limits are exceeded, the `ProcessMonitor` is purely observational - it logs metrics without interfering with worker processes.
 
 ## Usage
 
@@ -24,12 +24,12 @@ Add a process monitor to log resource usage every minute:
 
 ```ruby
 service "supervisor" do
-	include Async::Container::Supervisor::Environment
+	include Async::Service::Supervisor::Environment
 	
 	monitors do
 		[
 			# Log CPU and memory metrics for all processes:
-			Async::Container::Supervisor::ProcessMonitor.new(
+			Async::Service::Supervisor::ProcessMonitor.new(
 				interval: 60  # Capture metrics every minute
 			)
 		]
@@ -51,10 +51,10 @@ The interval (in seconds) at which to capture and log process metrics. Default: 
 
 ```ruby
 # Log every 30 seconds
-Async::Container::Supervisor::ProcessMonitor.new(interval: 30)
+Async::Service::Supervisor::ProcessMonitor.new(interval: 30)
 
 # Log every 5 minutes
-Async::Container::Supervisor::ProcessMonitor.new(interval: 300)
+Async::Service::Supervisor::ProcessMonitor.new(interval: 300)
 ```
 
 ## Captured Metrics

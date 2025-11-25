@@ -6,26 +6,29 @@
 def initialize(...)
 	super
 	
-	require "async/container/supervisor"
+	require "async/service/supervisor"
 end
 
 # Restart the container, typically causing it to exit (the parent process should then restart it).
 def restart
 	client do |connection|
-		connection.call(do: :restart)
+		supervisor = connection[:supervisor]
+		supervisor.restart
 	end
 end
 
 # Reload the services gracefully, allowing them to reconfigure without dropping connections.
 def reload
 	client do |connection|
-		connection.call(do: :restart, signal: :HUP)
+		supervisor = connection[:supervisor]
+		supervisor.restart(signal: :HUP)
 	end
 end
 
 def status
 	client do |connection|
-		connection.call(do: :status)
+		supervisor = connection[:supervisor]
+		supervisor.status
 	end
 end
 
@@ -35,27 +38,25 @@ end
 # that are retained after garbage collection.
 #
 # @parameter duration [Integer] The duration in seconds to sample for (default: 10).
-# @parameter connection_id [String] The connection ID to target a specific worker.
+# @parameter connection_id [Integer] The connection ID to target a specific worker.
 def memory_sample(duration: 10, connection_id:)
 	client do |connection|
 		Console.info(self, "Sampling memory from worker...", duration: duration, connection_id: connection_id)
 		
-		# Build the operation request:
-		operation = {do: :memory_sample, duration: duration}
-		
-		# Use the forward operation to proxy the request to a worker:
-		return connection.call(do: :forward, operation: operation, connection_id: connection_id)
+		supervisor = connection[:supervisor]
+		worker = supervisor[connection_id]
+		return worker.memory_sample(duration: duration)
 	end
 end
 
 private
 
 def endpoint
-	Async::Container::Supervisor.endpoint
+	Async::Service::Supervisor.endpoint
 end
 
 def client(&block)
 	Sync do
-		Async::Container::Supervisor::Client.new(endpoint: self.endpoint).connect(&block)
+		Async::Service::Supervisor::Client.new(endpoint: self.endpoint).connect(&block)
 	end
 end

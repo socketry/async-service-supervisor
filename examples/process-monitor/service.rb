@@ -4,7 +4,7 @@
 # Released under the MIT License.
 # Copyright, 2025, by Samuel Williams.
 
-require "async/container/supervisor"
+require "async/service/supervisor"
 
 class WorkerService < Async::Service::Generic
 	def setup(container)
@@ -12,9 +12,9 @@ class WorkerService < Async::Service::Generic
 		
 		container.run(name: self.class.name, count: 4, restart: true, health_check_timeout: 2) do |instance|
 			Async do
-				if @environment.implements?(Async::Container::Supervisor::Supervised)
-					@evaluator.make_supervised_worker(instance).run
-				end
+				evaluator = self.environment.evaluator
+				
+				evaluator.prepare!(instance)
 				
 				start_time = Time.now
 				
@@ -49,19 +49,19 @@ end
 service "worker" do
 	service_class WorkerService
 	
-	include Async::Container::Supervisor::Supervised
+	include Async::Service::Supervisor::Supervised
 end
 
 service "supervisor" do
-	include Async::Container::Supervisor::Environment
+	include Async::Service::Supervisor::Environment
 	
 	monitors do
 		[
 			# Monitor process metrics every 10 seconds
-			Async::Container::Supervisor::ProcessMonitor.new(interval: 10),
+			Async::Service::Supervisor::ProcessMonitor.new(interval: 10),
 			
 			# Also monitor memory and restart workers if they exceed 500MB
-			Async::Container::Supervisor::MemoryMonitor.new(
+			Async::Service::Supervisor::MemoryMonitor.new(
 				interval: 5,
 				maximum_size_limit: 1024 * 1024 * 500
 			)

@@ -4,7 +4,7 @@
 # Released under the MIT License.
 # Copyright, 2025, by Samuel Williams.
 
-require "async/container/supervisor"
+require "async/service/supervisor"
 
 class SleepService < Async::Service::Generic
 	def setup(container)
@@ -12,9 +12,9 @@ class SleepService < Async::Service::Generic
 		
 		container.run(name: self.class.name, count: 1, restart: true, health_check_timeout: 2) do |instance|
 			Async do
-				if @environment.implements?(Async::Container::Supervisor::Supervised)
-					@evaluator.make_supervised_worker(instance).run
-				end
+				evaluator = self.environment.evaluator
+				
+				evaluator.prepare!(instance)
 				
 				start_time = Time.now
 				
@@ -31,9 +31,9 @@ end
 service "sleep" do
 	service_class SleepService
 	
-	include Async::Container::Supervisor::Supervised
+	include Async::Service::Supervisor::Supervised
 end
 
 service "supervisor" do
-	include Async::Container::Supervisor::Environment
+	include Async::Service::Supervisor::Environment
 end

@@ -9,7 +9,7 @@ require "set"
 require_relative "loop"
 
 module Async
-	module Container
+	module Service
 		module Supervisor
 			# Monitors worker memory usage and restarts workers that exceed limits.
 			#
@@ -42,40 +42,48 @@ module Async
 					@cluster.add(process_id, **@options)
 				end
 				
-				# Register the connection (worker) with the memory monitor.
-				def register(connection)
-					Console.debug(self, "Registering connection.", connection: connection, state: connection.state)
-					if process_id = connection.state[:process_id]
-						connections = @processes[process_id]
-						
-						if connections.empty?
-							Console.debug(self, "Registering process.", child: {process_id: process_id})
-							self.add(process_id)
-						end
-						
-						connections.add(connection)
-					end
-				end
-				
-				# Remove the connection (worker) from the memory monitor.
-				def remove(connection)
-					if process_id = connection.state[:process_id]
-						connections = @processes[process_id]
-						
-						connections.delete(connection)
-						
-						if connections.empty?
-							Console.debug(self, "Removing process.", child: {process_id: process_id})
-							@cluster.remove(process_id)
-						end
-					end
-				end
-				
-				# Dump the current status of the memory monitor.
+				# Register a worker with the memory monitor.
 				#
-				# @parameter call [Connection::Call] The call to respond to.
-				def status(call)
-					call.push(memory_monitor: @cluster)
+				# @parameter supervisor_controller [SupervisorController] The supervisor controller for the worker.
+				def register(supervisor_controller)
+					process_id = supervisor_controller.process_id
+					return unless process_id
+					
+					Console.debug(self, "Registering worker.", supervisor_controller: supervisor_controller, process_id: process_id)
+					
+					controllers = @processes[process_id]
+					
+					if controllers.empty?
+						Console.debug(self, "Registering process.", child: {process_id: process_id})
+						self.add(process_id)
+					end
+					
+					controllers.add(supervisor_controller)
+				end
+				
+				# Remove a worker from the memory monitor.
+				#
+				# @parameter supervisor_controller [SupervisorController] The supervisor controller for the worker.
+				def remove(supervisor_controller)
+					process_id = supervisor_controller.process_id
+					return unless process_id
+					
+					controllers = @processes[process_id]
+					
+					controllers.delete(supervisor_controller)
+					
+					if controllers.empty?
+						Console.debug(self, "Removing process.", child: {process_id: process_id})
+						@cluster.remove(process_id)
+						@processes.delete(process_id)
+					end
+				end
+				
+				# Get status for the memory monitor.
+				#
+				# @returns [Hash] Status including the memory cluster.
+				def status
+					{memory_monitor: @cluster.as_json}
 				end
 				
 				# Invoked when a memory leak is detected.
@@ -89,14 +97,18 @@ module Async
 					if @memory_sample
 						Console.info(self, "Capturing memory sample...", child: {process_id: process_id}, memory_sample: @memory_sample)
 						
-						# We are tracking multiple connections to the same process:
-						connections = @processes[process_id]
+						# We are tracking multiple controllers for the same process:
+						controllers = @processes[process_id]
 						
 						# Try to capture a memory sample:
-						connections.each do |connection|
-							result = connection.call(do: :memory_sample, **@memory_sample)
+						controllers.each do |supervisor_controller|
+							# Get the worker controller proxy from the connection
+							worker_controller = supervisor_controller.connection[:worker]
 							
-							Console.info(self, "Memory sample completed:", child: {process_id: process_id}, result: result)
+							if worker_controller
+								result = worker_controller.memory_sample(**@memory_sample)
+								Console.info(self, "Memory sample completed:", child: {process_id: process_id}, result: result)
+							end
 						end
 					end
 					
@@ -136,3 +148,4 @@ module Async
 		end
 	end
 end
+

@@ -3,10 +3,10 @@
 # Released under the MIT License.
 # Copyright, 2025, by Samuel Williams.
 
-require "async/container/supervisor/a_server"
+require "async/service/supervisor/a_server"
 
 module Async
-	module Container
+	module Service
 		module Supervisor
 			AMonitor = Sus::Shared("a monitor") do
 				include_context AServer
@@ -15,35 +15,38 @@ module Async
 				
 				it "can add and remove connections" do
 					worker = Worker.new(endpoint: endpoint)
-					connection = worker.connect
+					worker_task = worker.run
 					
 					event = registration_monitor.pop
 					expect(event).to have_attributes(
 						type: be == :register,
 					)
+					expect(event.supervisor_controller).to be_a(Async::Service::Supervisor::SupervisorController)
 					
-					connection.close
+					worker_task.stop
 					
 					event = registration_monitor.pop
 					expect(event).to have_attributes(
 						type: be == :remove,
 					)
 				ensure
-					connection&.close
+					worker_task&.stop
 				end
 				
 				it "can respond to status calls" do
-					worker = Worker.new(endpoint: endpoint)
-					connection = worker.connect
+					client = Client.new(endpoint: endpoint)
 					
-					response = connection.call(do: :status)
-					
-					# Maybe we could be a bit more specific.
-					expect(response).to be_a(Array)
-				ensure
-					connection&.close
+					client.connect do |connection|
+						supervisor = connection[:supervisor]
+						response = supervisor.status
+						
+						# Status should return an array of monitor statuses
+						expect(response).to be_a(Array)
+					end
 				end
 			end
 		end
 	end
 end
+
+

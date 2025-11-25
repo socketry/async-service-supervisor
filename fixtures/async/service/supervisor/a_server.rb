@@ -4,16 +4,16 @@
 # Copyright, 2025, by Samuel Williams.
 
 require "sus/fixtures/async/scheduler_context"
-require "async/container/supervisor"
+require "async/service/supervisor"
 
 require "io/endpoint/bound_endpoint"
 require "tmpdir"
 
 module Async
-	module Container
+	module Service
 		module Supervisor
 			class RegistrationMonitor
-				Event = Struct.new(:type, :connection)
+				Event = Struct.new(:type, :supervisor_controller)
 				
 				def initialize
 					@registrations = ::Thread::Queue.new
@@ -24,20 +24,20 @@ module Async
 				def run
 				end
 				
-				def status(call)
-					call.push(registrations: @registrations.size)
+				def status
+					{registrations: @registrations.size}
 				end
 				
 				def pop(...)
 					@registrations.pop(...)
 				end
 				
-				def register(connection)
-					@registrations << Event.new(:register, connection)
+				def register(supervisor_controller)
+					@registrations << Event.new(:register, supervisor_controller)
 				end
 				
-				def remove(connection)
-					@registrations << Event.new(:remove, connection)
+				def remove(supervisor_controller)
+					@registrations << Event.new(:remove, supervisor_controller)
 				end
 			end
 			
@@ -45,7 +45,7 @@ module Async
 				include Sus::Fixtures::Async::SchedulerContext
 				
 				let(:ipc_path) {File.join(@root, "supervisor.ipc")}
-				let(:endpoint) {Async::Container::Supervisor.endpoint(ipc_path)}
+				let(:endpoint) {Async::Service::Supervisor.endpoint(ipc_path)}
 				
 				def around
 					Dir.mktmpdir do |directory|
@@ -56,7 +56,7 @@ module Async
 				
 				let(:registration_monitor) {RegistrationMonitor.new}
 				let(:monitors) {[registration_monitor]}
-				let(:server) {Async::Container::Supervisor::Server.new(endpoint: @bound_endpoint, monitors: monitors)}
+				let(:server) {Async::Service::Supervisor::Server.new(endpoint: @bound_endpoint, monitors: monitors)}
 				
 				def restart_supervisor
 					@server_task&.stop
@@ -82,3 +82,4 @@ module Async
 		end
 	end
 end
+

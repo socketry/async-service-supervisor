@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Async
-	module Container
+	module Service
 		module Supervisor
 			# A helper for running loops at aligned intervals.
 			module Loop
@@ -34,3 +34,4 @@ module Async
 		end
 	end
 end
+

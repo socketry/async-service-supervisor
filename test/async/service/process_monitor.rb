@@ -3,16 +3,16 @@
 # Released under the MIT License.
 # Copyright, 2025, by Samuel Williams.
 
-require "async/container/supervisor/process_monitor"
-require "async/container/supervisor/a_monitor"
+require "async/service/supervisor/process_monitor"
+require "async/service/supervisor/a_monitor"
 
 require "sus/fixtures/console/captured_logger"
 
-describe Async::Container::Supervisor::ProcessMonitor do
+describe Async::Service::Supervisor::ProcessMonitor do
 	include Sus::Fixtures::Console::CapturedLogger
 	
 	let(:monitor) {subject.new(interval: 1)}
-	it_behaves_like Async::Container::Supervisor::AMonitor
+	it_behaves_like Async::Service::Supervisor::AMonitor
 	
 	with "#ppid" do
 		it "defaults to the current parent process id" do
@@ -40,3 +40,4 @@ describe Async::Container::Supervisor::ProcessMonitor do
 		end
 	end
 end
+

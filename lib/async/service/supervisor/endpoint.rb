@@ -6,7 +6,7 @@
 require "io/endpoint/unix_endpoint"
 
 module Async
-	module Container
+	module Service
 		module Supervisor
 			# Get the supervisor IPC endpoint.
 			#
@@ -18,3 +18,4 @@ module Async
 		end
 	end
 end
+

@@ -6,10 +6,8 @@
 require "process/metrics"
 require_relative "loop"
 
-require_relative "loop"
-
 module Async
-	module Container
+	module Service
 		module Supervisor
 			# Monitors process metrics and logs them periodically.
 			#
@@ -30,40 +28,41 @@ module Async
 				# @attribute [Integer] The parent process ID being monitored.
 				attr :ppid
 				
-				# Register a connection with the process monitor.
+				# Register a worker with the process monitor.
 				#
 				# This is provided for consistency with {MemoryMonitor}, but since we monitor
-				# the entire process tree via ppid, we don't need to track individual connections.
+				# the entire process tree via ppid, we don't need to track individual workers.
 				#
-				# @parameter connection [Connection] The connection to register.
-				def register(connection)
-					Console.debug(self, "Connection registered.", connection: connection, state: connection.state)
+				# @parameter supervisor_controller [SupervisorController] The supervisor controller for the worker.
+				def register(supervisor_controller)
+					process_id = supervisor_controller.process_id
+					Console.debug(self, "Worker registered.", supervisor_controller: supervisor_controller, process_id: process_id)
 				end
 				
-				# Remove a connection from the process monitor.
+				# Remove a worker from the process monitor.
 				#
 				# This is provided for consistency with {MemoryMonitor}, but since we monitor
-				# the entire process tree via ppid, we don't need to track individual connections.
+				# the entire process tree via ppid, we don't need to track individual workers.
 				#
-				# @parameter connection [Connection] The connection to remove.
-				def remove(connection)
-					Console.debug(self, "Connection removed.", connection: connection, state: connection.state)
+				# @parameter supervisor_controller [SupervisorController] The supervisor controller for the worker.
+				def remove(supervisor_controller)
+					process_id = supervisor_controller.process_id
+					Console.debug(self, "Worker removed.", supervisor_controller: supervisor_controller, process_id: process_id)
 				end
 				
 				# Capture current process metrics for the entire process tree.
 				#
 				# @returns [Hash] A hash mapping process IDs to their metrics.
 				def metrics
-					Process::Metrics::General.capture(ppid: @ppid)
+					Process::Metrics::General.capture(ppid: @ppid).transform_values!(&:as_json)
 				end
 				
-				# Dump the current status of the process monitor.
+				# Get status for the process monitor.
 				#
-				# @parameter call [Connection::Call] The call to respond to.
-				def status(call)
+				# @returns [Hash] Status including process metrics.
+				def status
 					metrics = self.metrics
-					
-					call.push(process_monitor: {ppid: @ppid, metrics: metrics})
+					{process_monitor: {ppid: @ppid, metrics: metrics}}
 				end
 				
 				# Run the process monitor.

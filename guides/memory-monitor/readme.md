@@ -1,6 +1,6 @@
 # Memory Monitor
 
-This guide explains how to use the {ruby Async::Container::Supervisor::MemoryMonitor} to detect and restart workers that exceed memory limits or develop memory leaks.
+This guide explains how to use the {ruby Async::Service::Supervisor::MemoryMonitor} to detect and restart workers that exceed memory limits or develop memory leaks.
 
 ## Overview
 
@@ -21,11 +21,11 @@ Add a memory monitor to your supervisor service to automatically restart workers
 
 ```ruby
 service "supervisor" do
-	include Async::Container::Supervisor::Environment
+	include Async::Service::Supervisor::Environment
 	
 	monitors do
 		[
-			Async::Container::Supervisor::MemoryMonitor.new(
+			Async::Service::Supervisor::MemoryMonitor.new(
 				# Check worker memory every 10 seconds:
 				interval: 10,
 				
@@ -52,7 +52,7 @@ The `MemoryMonitor` accepts the following options:
 The interval (in seconds) at which to check for memory leaks. Default: `10` seconds.
 
 ```ruby
-Async::Container::Supervisor::MemoryMonitor.new(interval: 30)
+Async::Service::Supervisor::MemoryMonitor.new(interval: 30)
 ```
 
 ### `maximum_size_limit`
@@ -61,10 +61,10 @@ The maximum memory size (in bytes) per process. When a process exceeds this limi
 
 ```ruby
 # 500MB limit
-Async::Container::Supervisor::MemoryMonitor.new(maximum_size_limit: 1024 * 1024 * 500)
+Async::Service::Supervisor::MemoryMonitor.new(maximum_size_limit: 1024 * 1024 * 500)
 
 # 1GB limit
-Async::Container::Supervisor::MemoryMonitor.new(maximum_size_limit: 1024 * 1024 * 1024)
+Async::Service::Supervisor::MemoryMonitor.new(maximum_size_limit: 1024 * 1024 * 1024)
 ```
 
 ### `total_size_limit`
@@ -73,7 +73,7 @@ The total size limit (in bytes) for all monitored processes combined. If not spe
 
 ```ruby
 # Total limit of 2GB across all workers
-Async::Container::Supervisor::MemoryMonitor.new(
+Async::Service::Supervisor::MemoryMonitor.new(
 	maximum_size_limit: 1024 * 1024 * 500,  # 500MB per process
 	total_size_limit: 1024 * 1024 * 1024 * 2  # 2GB total
 )
@@ -87,7 +87,7 @@ Default: `{duration: 30, timeout: 120}`
 
 ```ruby
 # Customize memory sampling:
-Async::Container::Supervisor::MemoryMonitor.new(
+Async::Service::Supervisor::MemoryMonitor.new(
 	memory_sample: {
 		duration: 60,  # Sample for 60 seconds
 		timeout: 180   # Timeout after 180 seconds
@@ -95,7 +95,7 @@ Async::Container::Supervisor::MemoryMonitor.new(
 )
 
 # Disable memory sampling:
-Async::Container::Supervisor::MemoryMonitor.new(
+Async::Service::Supervisor::MemoryMonitor.new(
 	memory_sample: nil
 )
 ```

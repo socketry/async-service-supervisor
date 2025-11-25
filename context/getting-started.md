@@ -1,23 +1,23 @@
 # Getting Started
 
-This guide explains how to get started with `async-container-supervisor` to supervise and monitor worker processes in your Ruby applications.
+This guide explains how to get started with `async-service-supervisor` to supervise and monitor worker processes in your Ruby applications.
 
 ## Installation
 
 Add the gem to your project:
 
 ```bash
-$ bundle add async-container-supervisor
+$ bundle add async-service-supervisor
 ```
 
 ## Core Concepts
 
-`async-container-supervisor` provides a robust process supervision system built on top of {ruby Async::Service::Generic}. The key components are:
+`async-service-supervisor` provides a robust process supervision system built on top of {ruby Async::Service::Generic}. The key components are:
 
-- {ruby Async::Container::Supervisor::Environment}: An environment mixin that sets up a supervisor service in your application.
-- {ruby Async::Container::Supervisor::Supervised}: An environment mixin that enables workers to connect to and be supervised by the supervisor.
-- {ruby Async::Container::Supervisor::Server}: The server that handles communication with workers and performs monitoring.
-- {ruby Async::Container::Supervisor::Worker}: A client that connects workers to the supervisor for health monitoring and diagnostics.
+- {ruby Async::Service::Supervisor::Environment}: An environment mixin that sets up a supervisor service in your application.
+- {ruby Async::Service::Supervisor::Supervised}: An environment mixin that enables workers to connect to and be supervised by the supervisor.
+- {ruby Async::Service::Supervisor::Server}: The server that handles communication with workers and performs monitoring.
+- {ruby Async::Service::Supervisor::Worker}: A client that connects workers to the supervisor for health monitoring and diagnostics.
 
 ### Process Architecture
 
@@ -27,7 +27,7 @@ The supervisor operates as a multi-process architecture with three layers:
 graph TD
     Controller[Async::Container::Controller<br/>Root Process]
     
-    Controller -->|spawns & manages| Supervisor[Supervisor Process<br/>async-container-supervisor]
+    Controller -->|spawns & manages| Supervisor[Supervisor Process<br/>async-service-supervisor]
     Controller -->|spawns & manages| Worker1[Worker Process 1]
     Controller -->|spawns & manages| Worker2[Worker Process 2]
     Controller -->|spawns & manages| WorkerN[Worker Process N...]
@@ -51,7 +51,7 @@ Create a service configuration file (e.g., `service.rb`):
 #!/usr/bin/env async-service
 # frozen_string_literal: true
 
-require "async/container/supervisor"
+require "async/service/supervisor"
 
 class MyWorkerService < Async::Service::Generic
 	def setup(container)
@@ -59,10 +59,11 @@ class MyWorkerService < Async::Service::Generic
 		
 		container.run(name: self.class.name, count: 4, restart: true) do |instance|
 			Async do
-				# Connect to the supervisor if available:
-				if @environment.implements?(Async::Container::Supervisor::Supervised)
-					@evaluator.make_supervised_worker(instance).run
-				end
+				# Get the environment evaluator:
+				evaluator = self.environment.evaluator
+				
+				# Prepare the instance (connects to supervisor if available):
+				evaluator.prepare!(instance)
 				
 				# Mark the worker as ready:
 				instance.ready!
@@ -85,12 +86,12 @@ service "worker" do
 	service_class MyWorkerService
 	
 	# Enable supervision for this service:
-	include Async::Container::Supervisor::Supervised
+	include Async::Service::Supervisor::Supervised
 end
 
 # Define the supervisor service:
 service "supervisor" do
-	include Async::Container::Supervisor::Environment
+	include Async::Service::Supervisor::Environment
 end
 ```
 
@@ -119,17 +120,17 @@ For example, to add monitoring:
 
 ```ruby
 service "supervisor" do
-	include Async::Container::Supervisor::Environment
+	include Async::Service::Supervisor::Environment
 	
 	monitors do
 		[
 			# Log process metrics for observability:
-			Async::Container::Supervisor::ProcessMonitor.new(
+			Async::Service::Supervisor::ProcessMonitor.new(
 				interval: 60
 			),
 			
 			# Restart workers exceeding memory limits:
-			Async::Container::Supervisor::MemoryMonitor.new(
+			Async::Service::Supervisor::MemoryMonitor.new(
 				interval: 10,
 				maximum_size_limit: 1024 * 1024 * 500  # 500MB limit per process
 			)
@@ -138,7 +139,7 @@ service "supervisor" do
 end
 ```
 
-See the {ruby Async::Container::Supervisor::MemoryMonitor Memory Monitor} and {ruby Async::Container::Supervisor::ProcessMonitor Process Monitor} guides for detailed configuration options and best practices.
+See the {ruby Async::Service::Supervisor::MemoryMonitor Memory Monitor} and {ruby Async::Service::Supervisor::ProcessMonitor Process Monitor} guides for detailed configuration options and best practices.
 
 ### Collecting Diagnostics
 

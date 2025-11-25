@@ -6,10 +6,11 @@
 # @namespace
 module Async
 	# @namespace
-	module Container
+	module Service
 		# @namespace
 		module Supervisor
 			VERSION = "0.9.1"
 		end
 	end
 end
+

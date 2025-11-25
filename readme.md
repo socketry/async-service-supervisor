@@ -1,8 +1,8 @@
-# Async::Container::Supervisor
+# Async::Service::Supervisor
 
 Provides a supervisor service for
 
-[![Development Status](https://github.com/socketry/async-container-supervisor/workflows/Test/badge.svg)](https://github.com/socketry/async-container-supervisor/actions?workflow=Test)
+[![Development Status](https://github.com/socketry/async-service-supervisor/workflows/Test/badge.svg)](https://github.com/socketry/async-service-supervisor/actions?workflow=Test)
 
 ## Features
 
@@ -14,17 +14,17 @@ Provides a supervisor service for
 
 ## Usage
 
-Please see the [project documentation](https://socketry.github.io/async-container-supervisor/) for more details.
+Please see the [project documentation](https://socketry.github.io/async-service-supervisor/) for more details.
 
-  - [Getting Started](https://socketry.github.io/async-container-supervisor/guides/getting-started/index) - This guide explains how to get started with `async-container-supervisor` to supervise and monitor worker processes in your Ruby applications.
+  - [Getting Started](https://socketry.github.io/async-service-supervisor/guides/getting-started/index) - This guide explains how to get started with `async-service-supervisor` to supervise and monitor worker processes in your Ruby applications.
 
-  - [Memory Monitor](https://socketry.github.io/async-container-supervisor/guides/memory-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Container::Supervisor::MemoryMonitor</code> to detect and restart workers that exceed memory limits or develop memory leaks.
+  - [Memory Monitor](https://socketry.github.io/async-service-supervisor/guides/memory-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::MemoryMonitor</code> to detect and restart workers that exceed memory limits or develop memory leaks.
 
-  - [Process Monitor](https://socketry.github.io/async-container-supervisor/guides/process-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Container::Supervisor::ProcessMonitor</code> to log CPU and memory metrics for your worker processes.
+  - [Process Monitor](https://socketry.github.io/async-service-supervisor/guides/process-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::ProcessMonitor</code> to log CPU and memory metrics for your worker processes.
 
 ## Releases
 
-Please see the [project releases](https://socketry.github.io/async-container-supervisor/releases/index) for all releases.
+Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
 ### v0.9.1
 
@@ -39,7 +39,7 @@ Please see the [project releases](https://socketry.github.io/async-container-sup
 
 ### v0.8.0
 
-  - Add `Async::Container::Supervisor::ProcessMonitor` for logging CPU and memory metrics periodically.
+  - Add `Async::Service::Supervisor::ProcessMonitor` for logging CPU and memory metrics periodically.
   - Fix documentation to use correct `maximum_size_limit:` parameter name for `MemoryMonitor` (was incorrectly documented as `limit:`).
 
 ### v0.7.0

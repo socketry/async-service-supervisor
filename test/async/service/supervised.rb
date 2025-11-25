@@ -3,8 +3,8 @@
 # Released under the MIT License.
 # Copyright, 2025, by Samuel Williams.
 
-require "async/container/supervisor/a_server"
-require "async/container/supervisor/supervised"
+require "async/service/supervisor/a_server"
+require "async/service/supervisor/supervised"
 
 class SleepService < Async::Service::Generic
 	def setup(container)
@@ -12,9 +12,9 @@ class SleepService < Async::Service::Generic
 		
 		container.spawn(name: self.class.name) do |instance|
 			Async do
-				if @environment.implements?(Async::Container::Supervisor::Supervised)
-					@evaluator.make_supervised_worker(instance).run
-				end
+				evaluator = self.environment.evaluator
+				
+				evaluator.prepare!(instance)
 				
 				instance.ready!
 				
@@ -24,8 +24,8 @@ class SleepService < Async::Service::Generic
 	end	
 end
 
-describe Async::Container::Supervisor::Supervised do
-	include Async::Container::Supervisor::AServer
+describe Async::Service::Supervisor::Supervised do
+	include Async::Service::Supervisor::AServer
 	
 	let(:state) do
 		{process_id: ::Process.pid}
@@ -35,21 +35,21 @@ describe Async::Container::Supervisor::Supervised do
 		environment = Async::Service::Environment.build(root: @root) do
 			service_class {SimpleService}
 			
-			include Async::Container::Supervisor::Supervised
+			include Async::Service::Supervisor::Supervised
 		end
 		
 		evaluator = environment.evaluator
-		worker = evaluator.make_supervised_worker(state)
+		# Get the supervisor worker for this process
+		worker = evaluator.supervisor_worker
 		worker_task = worker.run
 		
 		# Wait for the worker to register with the supervisor.
 		event = registration_monitor.pop
-		connection = event.connection
+		supervisor_controller = event.supervisor_controller
 		
-		expect(connection.state).to have_keys(
-			process_id: be == ::Process.pid
-		)
+		expect(supervisor_controller.process_id).to be == ::Process.pid
 	ensure
 		worker_task&.stop
 	end
 end
+

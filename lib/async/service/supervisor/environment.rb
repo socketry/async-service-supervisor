@@ -4,16 +4,19 @@
 # Copyright, 2025, by Samuel Williams.
 
 require "async/service/environment"
+require "async/service/managed/environment"
 
 require_relative "service"
 
 module Async
-	module Container
+	module Service
 		module Supervisor
 			# An environment mixin for supervisor services.
 			#
 			# Provides configuration and setup for supervisor processes that monitor workers.
 			module Environment
+				include Async::Service::Managed::Environment
+				
 				# The service class to use for the supervisor.
 				# @returns [Class]
 				def service_class
@@ -38,9 +41,16 @@ module Async
 					::IO::Endpoint.unix(ipc_path)
 				end
 				
+				# Number of supervisor instances (always 1).
+				# @returns [Integer]
+				def count
+					1
+				end
+				
 				# Options to use when creating the container.
+				# Merges with Managed::Environment defaults.
 				def container_options
-					{restart: true, count: 1, health_check_timeout: 30}
+					super.merge(restart: true, count: self.count)
 				end
 				
 				# Get the list of monitors to run in the supervisor.
@@ -62,3 +72,4 @@ module Async
 		end
 	end
 end
+

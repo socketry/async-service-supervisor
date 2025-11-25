@@ -6,7 +6,7 @@
 require "async/service/environment"
 
 module Async
-	module Container
+	module Service
 		module Supervisor
 			# An environment mixin for supervised worker services.
 			#
@@ -24,12 +24,20 @@ module Async
 					::IO::Endpoint.unix(supervisor_ipc_path)
 				end
 				
+				# The supervised worker for the current process.
+				# @returns [Worker] The worker client.
+				def supervisor_worker
+					Worker.new(process_id: Process.pid, endpoint: supervisor_endpoint)
+				end
+				
 				# Create a supervised worker for the given instance.
 				#
 				# @parameter instance [Async::Container::Instance] The container instance.
 				# @returns [Worker] The worker client.
-				def make_supervised_worker(instance)
-					Worker.new(instance, endpoint: supervisor_endpoint)
+				def prepare!(instance)
+					super(instance)
+					
+					supervisor_worker.run
 				end
 			end
 		end
