@@ -61,8 +61,7 @@ module Async
 				#
 				# @returns [Hash] Status including process metrics.
 				def status
-					metrics = self.metrics
-					{process_monitor: {ppid: @ppid, metrics: metrics}}
+					{process_monitor: {ppid: @ppid, metrics: self.metrics}}
 				end
 				
 				# Run the process monitor.
