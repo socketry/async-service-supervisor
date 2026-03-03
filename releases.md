@@ -5,6 +5,7 @@
   - Serialize `register`/`remove` and `check!` operations in `MemoryMonitor` to prevent race conditions.
   - Remove `memory_sample` functionality - it wasn't very useful and added a lot of complexity.
   - Add support for `Memory::Leak::Cluster` `free_size_minimum:` option.
+  - Remove extraneous "Memory leak detected!" logs.
 
 ## v0.9.1
 
