@@ -3,6 +3,7 @@
 ## Unreleased
 
   - Serialize `register`/`remove` and `check!` operations in `MemoryMonitor` to prevent race conditions.
+  - Remove `memory_sample` functionality - it wasn't very useful and added a lot of complexity.
 
 ## v0.9.1
 

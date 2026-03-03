@@ -65,7 +65,7 @@ module Async
 				# @example Accessing a worker
 				#   supervisor = connection[:supervisor]
 				#   worker = supervisor[id]
-				#   worker.memory_sample(duration: 10)
+				#   worker.memory_dump(path: "/tmp/dump.json")
 				#
 				# @parameter id [Integer] The ID of the worker.
 				# @returns [Proxy] A proxy to the worker controller.

@@ -20,11 +20,9 @@ module Async
 				# @parameter interval [Integer] The interval at which to check for memory leaks.
 				# @parameter total_size_limit [Integer] The total size limit of all processes, or nil for no limit.
 				# @parameter options [Hash] Options to pass to the cluster when adding processes.
-				def initialize(interval: 10, total_size_limit: nil, memory_sample: false, **options)
+				def initialize(interval: 10, total_size_limit: nil, **options)
 					@interval = interval
 					@cluster = Memory::Leak::Cluster.new(total_size_limit: total_size_limit)
-					
-					@memory_sample = memory_sample
 					
 					# We use these options when adding processes to the cluster:
 					@options = options
@@ -100,24 +98,6 @@ module Async
 				# @returns [Boolean] True if the process was killed.
 				def memory_leak_detected(process_id, monitor)
 					Console.info(self, "Memory leak detected!", child: {process_id: process_id}, monitor: monitor)
-					
-					if @memory_sample
-						Console.info(self, "Capturing memory sample...", child: {process_id: process_id}, memory_sample: @memory_sample)
-						
-						# We are tracking multiple controllers for the same process:
-						controllers = @processes[process_id]
-						
-						# Try to capture a memory sample:
-						controllers.each do |supervisor_controller|
-							# Get the worker controller proxy from the connection
-							worker_controller = supervisor_controller.connection[:worker]
-							
-							if worker_controller
-								result = worker_controller.memory_sample(**@memory_sample)
-								Console.info(self, "Memory sample completed:", child: {process_id: process_id}, result: result)
-							end
-						end
-					end
 					
 					# Kill the process gently:
 					begin

@@ -11,7 +11,7 @@ require "sus/fixtures/console/captured_logger"
 describe Async::Service::Supervisor::MemoryMonitor do
 	include Sus::Fixtures::Console::CapturedLogger
 	
-	let(:monitor) {subject.new(interval: 1, memory_sample: {duration: 1, timeout: 5})}
+	let(:monitor) {subject.new(interval: 1)}
 	it_behaves_like Async::Service::Supervisor::AMonitor
 	
 	with "#run" do

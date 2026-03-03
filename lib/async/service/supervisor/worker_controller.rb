@@ -54,7 +54,6 @@ module Async
 				# Dump the entire object space to a file.
 				#
 				# This is a heavyweight operation that dumps all objects in the heap.
-				# Consider using {memory_sample} for lighter weight memory leak detection.
 				#
 				# @parameter path [String] Optional file path to save the dump.
 				def memory_dump(path: nil)
@@ -63,48 +62,6 @@ module Async
 					dump(path: path, buffer: false) do |file|
 						ObjectSpace.dump_all(output: file)
 					end
-				end
-				
-				# Sample memory allocations over a time period to identify potential leaks.
-				#
-				# This method is much lighter weight than {memory_dump} and focuses on
-				# retained objects allocated during the sampling period. Late-lifecycle
-				# allocations that are retained are likely memory leaks.
-				#
-				# The method samples allocations for the specified duration, forces a garbage
-				# collection, and returns a JSON report showing allocated vs retained memory
-				# broken down by gem, file, location, and class.
-				#
-				# @parameter duration [Numeric] The duration in seconds to sample for.
-				# @parameter path [String] Optional file path to save the sample.
-				def memory_sample(duration:, path: nil)
-					require "memory"
-					
-					unless duration.positive?
-						raise ArgumentError, "Positive duration is required!"
-					end
-					
-					Console.info(self, "Starting memory sampling...", duration: duration)
-					
-					# Create a sampler to track allocations
-					sampler = Memory::Sampler.new
-					
-					# Start sampling
-					sampler.start
-					
-					# Sample for the specified duration
-					sleep(duration)
-					
-					# Stop sampling
-					sampler.stop
-					
-					report = sampler.report
-					
-					dump(path: path) do |file|
-						file.puts(report.to_s)
-					end
-				ensure
-					GC.start
 				end
 				
 				# Dump information about all running threads.

@@ -64,9 +64,9 @@ describe Async::Service::Supervisor do
 			client.connect do |connection|
 				supervisor = connection[:supervisor]
 				
-				# Get the worker proxy using array-like access and invoke memory_sample directly
+				# Get the worker proxy using array-like access and invoke scheduler_dump directly
 				worker_proxy = supervisor[connection_id]
-				result = worker_proxy.memory_sample(duration: 1)
+				result = worker_proxy.scheduler_dump
 				
 				# Verify we got the response
 				expect(result).to have_keys(:data)
@@ -113,28 +113,5 @@ describe Async::Service::Supervisor do
 		end
 	end
 	
-	with "memory_sample" do
-		it "can sample memory allocations" do
-			worker = Async::Service::Supervisor::Worker.new(process_id: ::Process.pid, endpoint: endpoint)
-			worker_task = worker.run
-			
-			# Wait for registration via the registration monitor
-			event = registration_monitor.pop(timeout: 5)
-			expect(event).to be_truthy
-			supervisor_controller = event.supervisor_controller
-			connection = supervisor_controller.connection
-			
-			# Get the worker controller proxy
-			worker_controller = connection[:worker]
-			
-			# Sample for a short duration (1 second for test speed)
-			result = worker_controller.memory_sample(duration: 1)
-			
-			# The result should contain a report
-			expect(result).to have_keys(:data)
-		ensure
-			worker_task&.stop
-		end
-	end
 end
 
