@@ -30,6 +30,9 @@ module Async
 					@options = options
 					
 					@processes = Hash.new{|hash, key| hash[key] = Set.new.compare_by_identity}
+					
+					# Queue to serialize cluster modifications to prevent race conditions:
+					@guard = Mutex.new
 				end
 				
 				# @attribute [Memory::Leak::Cluster] The cluster of processes being monitored.
@@ -51,14 +54,16 @@ module Async
 					
 					Console.debug(self, "Registering worker.", supervisor_controller: supervisor_controller, process_id: process_id)
 					
-					controllers = @processes[process_id]
-					
-					if controllers.empty?
-						Console.debug(self, "Registering process.", child: {process_id: process_id})
-						self.add(process_id)
+					@guard.synchronize do
+						controllers = @processes[process_id]
+						
+						if controllers.empty?
+							Console.debug(self, "Registering process.", child: {process_id: process_id})
+							self.add(process_id)
+						end
+						
+						controllers.add(supervisor_controller)
 					end
-					
-					controllers.add(supervisor_controller)
 				end
 				
 				# Remove a worker from the memory monitor.
@@ -68,14 +73,16 @@ module Async
 					process_id = supervisor_controller.process_id
 					return unless process_id
 					
-					controllers = @processes[process_id]
-					
-					controllers.delete(supervisor_controller)
-					
-					if controllers.empty?
-						Console.debug(self, "Removing process.", child: {process_id: process_id})
-						@cluster.remove(process_id)
-						@processes.delete(process_id)
+					@guard.synchronize do
+						controllers = @processes[process_id]
+						
+						controllers.delete(supervisor_controller)
+						
+						if controllers.empty?
+							Console.debug(self, "Removing process.", child: {process_id: process_id})
+							@cluster.remove(process_id)
+							@processes.delete(process_id)
+						end
 					end
 				end
 				
@@ -131,14 +138,16 @@ module Async
 				def run
 					Async do
 						Loop.run(interval: @interval) do
-							# This block must return true if the process was killed.
-							@cluster.check! do |process_id, monitor|
-								Console.error(self, "Memory leak detected!", child: {process_id: process_id}, monitor: monitor)
-								
-								begin
-									memory_leak_detected(process_id, monitor)
-								rescue => error
-									Console.error(self, "Failed to handle memory leak!", child: {process_id: process_id}, exception: error)
+							@guard.synchronize do
+								# This block must return true if the process was killed.
+								@cluster.check! do |process_id, monitor|
+									Console.error(self, "Memory leak detected!", child: {process_id: process_id}, monitor: monitor)
+									
+									begin
+										memory_leak_detected(process_id, monitor)
+									rescue => error
+										Console.error(self, "Failed to handle memory leak!", child: {process_id: process_id}, exception: error)
+									end
 								end
 							end
 						end
