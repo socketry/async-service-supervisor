@@ -75,7 +75,12 @@ module Async
 				end
 				
 				after do
-					@server_task&.stop
+					if server_task = @server_task
+						@server_task = nil
+						server_task.stop
+						server_task.wait_all
+					end
+					
 					@bound_endpoint&.close
 				end
 			end
