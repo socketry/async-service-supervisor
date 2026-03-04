@@ -34,7 +34,7 @@ describe Async::Service::Supervisor::Supervised do
 	it "can define a supervised service" do
 		environment = Async::Service::Environment.build(root: @root) do
 			name "simple-service"
-
+			
 			service_class {SimpleService}
 			
 			include Async::Service::Supervisor::Supervised

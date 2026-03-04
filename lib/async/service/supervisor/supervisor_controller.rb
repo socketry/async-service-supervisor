@@ -12,6 +12,7 @@ module Async
 			#
 			# Handles registration of workers, worker lookup, restarting process groups, and status queries.
 			class SupervisorController < Async::Bus::Controller
+				# Initialize the supervisor controller with the server and connection.
 				def initialize(server, connection)
 					@server = server
 					@connection = connection

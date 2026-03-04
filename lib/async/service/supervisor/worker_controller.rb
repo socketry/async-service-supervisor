@@ -13,6 +13,7 @@ module Async
 			#
 			# Handles diagnostic operations like memory dumps, thread dumps, scheduler dumps, etc.
 			class WorkerController < Async::Bus::Controller
+				# Initialize the worker controller for the worker.
 				def initialize(worker)
 					@worker = worker
 				end

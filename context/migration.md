@@ -61,15 +61,15 @@ Replace all references to `Async::Container::Supervisor` with `Async::Service::S
 include Async::Container::Supervisor::Environment
 include Async::Container::Supervisor::Supervised
 
-Async::Container::Supervisor::MemoryMonitor.new(...)
-Async::Container::Supervisor::ProcessMonitor.new(...)
+Async::Container::Supervisor::MemoryMonitor.new
+Async::Container::Supervisor::ProcessMonitor.new
 
 # After:
 include Async::Service::Supervisor::Environment
 include Async::Service::Supervisor::Supervised
 
-Async::Service::Supervisor::MemoryMonitor.new(...)
-Async::Service::Supervisor::ProcessMonitor.new(...)
+Async::Service::Supervisor::MemoryMonitor.new
+Async::Service::Supervisor::ProcessMonitor.new
 ```
 
 ### 4. Update Worker Service Setup
@@ -237,7 +237,7 @@ client.connect do |connection|
 	# Direct call-based API:
 	result = connection.call(do: :restart)
 	result = connection.call(do: :status)
-	result = connection.call(do: :forward, operation: {...}, connection_id: "...")
+	result = connection.call(do: :forward, operation: {do: :whatever}, connection_id: "...")
 end
 ```
 
@@ -253,7 +253,8 @@ client.connect do |connection|
 	
 	# Worker operations use the worker controller:
 	worker = connection[:worker]
-	# Worker operations are available through the worker controller
+	# Worker operations are available through the worker controller:
+	worker.whatever
 end
 ```
 
