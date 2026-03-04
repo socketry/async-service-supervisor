@@ -18,6 +18,8 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
   - [Getting Started](https://socketry.github.io/async-service-supervisor/guides/getting-started/index) - This guide explains how to get started with `async-service-supervisor` to supervise and monitor worker processes in your Ruby applications.
 
+  - [Migration Guide](https://socketry.github.io/async-service-supervisor/guides/migration/index) - This guide explains how to migrate from `async-container-supervisor` to `async-service-supervisor`. The new version provides a cleaner API built on `Async::Bus` for improved reliability and maintainability.
+
   - [Memory Monitor](https://socketry.github.io/async-service-supervisor/guides/memory-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::MemoryMonitor</code> to detect and restart workers that exceed memory limits or develop memory leaks.
 
   - [Process Monitor](https://socketry.github.io/async-service-supervisor/guides/process-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::ProcessMonitor</code> to log CPU and memory metrics for your worker processes.

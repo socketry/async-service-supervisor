@@ -10,6 +10,11 @@ files:
   title: Getting Started
   description: This guide explains how to get started with `async-service-supervisor`
     to supervise and monitor worker processes in your Ruby applications.
+- path: migration.md
+  title: Migration Guide
+  description: This guide explains how to migrate from `async-container-supervisor`
+    to `async-service-supervisor`. The new version provides a cleaner API built on
+    `Async::Bus` for improved reliability and maintainability.
 - path: memory-monitor.md
   title: Memory Monitor
   description: This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::MemoryMonitor</code>
