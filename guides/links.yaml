@@ -1,8 +1,11 @@
 getting-started:
   order: 1
 
-memory-monitor:
+migration:
   order: 2
 
-process-monitor:
+memory-monitor:
   order: 3
+
+process-monitor:
+  order: 4
