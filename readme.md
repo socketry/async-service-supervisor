@@ -28,6 +28,12 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
+### v0.11.0
+
+  - Add `state` attribute to `SupervisorController` to store per-worker metadata (e.g., service name).
+  - Add `state` parameter to `Worker#initialize` to allow workers to provide state during registration.
+  - State is now accessible via `supervisor_controller.state` instead of `connection.state` (as it was in `Async::Container::Supervisor`).
+
 ### v0.10.0
 
   - Serialize `register`/`remove` and `check!` operations in `MemoryMonitor` to prevent race conditions.
@@ -70,10 +76,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
 ### v0.6.0
 
   - Add `async:container:supervisor:reload` command to restart the container (blue/green deployment).
-
-### v0.1.0
-
-  - Initial implementation.
 
 ## Contributing
 

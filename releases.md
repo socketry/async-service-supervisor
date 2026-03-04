@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.11.0
 
   - Add `state` attribute to `SupervisorController` to store per-worker metadata (e.g., service name).
   - Add `state` parameter to `Worker#initialize` to allow workers to provide state during registration.
