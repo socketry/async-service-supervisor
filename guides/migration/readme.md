@@ -309,3 +309,9 @@ The new approach provides:
 - Simpler ID management.
 - Better controller-based API.
 - More explicit worker lifecycle management.
+
+### Connection State Handling
+
+State has moved from `connection.state` to `supervisor_controller.state`. Monitors receive `supervisor_controller` objects instead of `connection` objects, and access state via `supervisor_controller.state[:name]` instead of `connection.state[:name]`.
+
+By default, the `Supervised` module automatically includes the service name in state via `supervisor_worker_state`. Override `supervisor_worker_state` in your service environment to customize the state.

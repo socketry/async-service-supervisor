@@ -1,5 +1,11 @@
 # Releases
 
+## Unreleased
+
+  - Add `state` attribute to `SupervisorController` to store per-worker metadata (e.g., service name).
+  - Add `state` parameter to `Worker#initialize` to allow workers to provide state during registration.
+  - State is now accessible via `supervisor_controller.state` instead of `connection.state` (as it was in `Async::Container::Supervisor`).
+
 ## v0.10.0
 
   - Serialize `register`/`remove` and `check!` operations in `MemoryMonitor` to prevent race conditions.

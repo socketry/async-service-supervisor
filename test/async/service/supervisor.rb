@@ -23,6 +23,67 @@ describe Async::Service::Supervisor do
 		worker_task&.stop
 	end
 	
+	with "state handling" do
+		it "stores state on supervisor_controller during registration" do
+			custom_state = {name: "test-service", version: "1.0"}
+			worker = Async::Service::Supervisor::Worker.new(
+				process_id: ::Process.pid,
+				endpoint: endpoint,
+				state: custom_state
+			)
+			worker_task = worker.run
+			
+			# Wait for registration via the registration monitor
+			event = registration_monitor.pop(timeout: 5)
+			
+			expect(event).to be_truthy
+			supervisor_controller = event.supervisor_controller
+			
+			expect(supervisor_controller.state).to have_keys(
+				name: be == "test-service",
+				version: be == "1.0"
+			)
+		ensure
+			worker_task&.stop
+		end
+		
+		it "defaults to empty state hash" do
+			worker = Async::Service::Supervisor::Worker.new(process_id: ::Process.pid, endpoint: endpoint)
+			worker_task = worker.run
+			
+			# Wait for registration via the registration monitor
+			event = registration_monitor.pop(timeout: 5)
+			
+			expect(event).to be_truthy
+			supervisor_controller = event.supervisor_controller
+			
+			expect(supervisor_controller.state).to be == {}
+		ensure
+			worker_task&.stop
+		end
+		
+		it "allows monitors to access state" do
+			custom_state = {name: "outbox"}
+			worker = Async::Service::Supervisor::Worker.new(
+				process_id: ::Process.pid,
+				endpoint: endpoint,
+				state: custom_state
+			)
+			worker_task = worker.run
+			
+			# Wait for registration via the registration monitor
+			event = registration_monitor.pop(timeout: 5)
+			
+			expect(event).to be_truthy
+			supervisor_controller = event.supervisor_controller
+			
+			# Verify state can be accessed by monitors
+			expect(supervisor_controller.state[:name]).to be == "outbox"
+		ensure
+			worker_task&.stop
+		end
+	end
+	
 	with "memory_dump" do
 		it "can dump memory" do
 			worker = Async::Service::Supervisor::Worker.new(process_id: ::Process.pid, endpoint: endpoint)
@@ -108,6 +169,67 @@ describe Async::Service::Supervisor do
 				worker_ids = supervisor.keys
 				expect(worker_ids).to be(:include?, connection_id)
 			end
+		ensure
+			worker_task&.stop
+		end
+	end
+	
+	with "state handling" do
+		it "stores state on supervisor_controller during registration" do
+			custom_state = {name: "test-service", version: "1.0"}
+			worker = Async::Service::Supervisor::Worker.new(
+				process_id: ::Process.pid,
+				endpoint: endpoint,
+				state: custom_state
+			)
+			worker_task = worker.run
+			
+			# Wait for registration via the registration monitor
+			event = registration_monitor.pop(timeout: 5)
+			
+			expect(event).to be_truthy
+			supervisor_controller = event.supervisor_controller
+			
+			expect(supervisor_controller.state).to have_keys(
+				name: be == "test-service",
+				version: be == "1.0"
+			)
+		ensure
+			worker_task&.stop
+		end
+		
+		it "defaults to empty state hash" do
+			worker = Async::Service::Supervisor::Worker.new(process_id: ::Process.pid, endpoint: endpoint)
+			worker_task = worker.run
+			
+			# Wait for registration via the registration monitor
+			event = registration_monitor.pop(timeout: 5)
+			
+			expect(event).to be_truthy
+			supervisor_controller = event.supervisor_controller
+			
+			expect(supervisor_controller.state).to be == {}
+		ensure
+			worker_task&.stop
+		end
+		
+		it "allows monitors to access state" do
+			custom_state = {name: "outbox"}
+			worker = Async::Service::Supervisor::Worker.new(
+				process_id: ::Process.pid,
+				endpoint: endpoint,
+				state: custom_state
+			)
+			worker_task = worker.run
+			
+			# Wait for registration via the registration monitor
+			event = registration_monitor.pop(timeout: 5)
+			
+			expect(event).to be_truthy
+			supervisor_controller = event.supervisor_controller
+			
+			# Verify state can be accessed by monitors
+			expect(supervisor_controller.state[:name]).to be == "outbox"
 		ensure
 			worker_task&.stop
 		end

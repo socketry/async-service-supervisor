@@ -33,6 +33,8 @@ describe Async::Service::Supervisor::Supervised do
 	
 	it "can define a supervised service" do
 		environment = Async::Service::Environment.build(root: @root) do
+			name "simple-service"
+
 			service_class {SimpleService}
 			
 			include Async::Service::Supervisor::Supervised
@@ -48,6 +50,9 @@ describe Async::Service::Supervisor::Supervised do
 		supervisor_controller = event.supervisor_controller
 		
 		expect(supervisor_controller.process_id).to be == ::Process.pid
+		expect(supervisor_controller.state).to have_keys(
+			name: be == "simple-service"
+		)
 	ensure
 		worker_task&.stop
 	end

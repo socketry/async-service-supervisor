@@ -19,6 +19,7 @@ module Async
 					@id = nil
 					@process_id = nil
 					@worker = nil
+					@state = {}
 				end
 				
 				# @attribute [Server] The server instance.
@@ -36,6 +37,9 @@ module Async
 				# @attribute [Proxy] The proxy to the worker controller.
 				attr :worker
 				
+				# @attribute [Hash] State associated with this worker connection (e.g., service name).
+				attr_accessor :state
+				
 				# Register a worker connection with the supervisor.
 				#
 				# Allocates a unique sequential ID, stores the worker controller proxy,
@@ -43,13 +47,15 @@ module Async
 				#
 				# @parameter worker [Proxy] The proxy to the worker controller.
 				# @parameter process_id [Integer] The process ID of the worker.
+				# @parameter state [Hash] Optional state to associate with this worker (e.g., service name).
 				# @returns [Integer] The connection ID assigned to the worker.
-				def register(worker, process_id:)
+				def register(worker, process_id:, state: {})
 					raise RuntimeError, "Already registered" if @id
 					
 					@id = @server.next_id
 					@process_id = process_id
 					@worker = worker
+					@state.merge!(state)
 					
 					@server.add(self)
 					

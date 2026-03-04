@@ -25,11 +25,13 @@ module Async
 				#
 				# @parameter process_id [Integer] The process ID to register with the supervisor.
 				# @parameter endpoint [IO::Endpoint] The supervisor endpoint to connect to.
-				def initialize(process_id: Process.pid, endpoint: Supervisor.endpoint)
+				# @parameter state [Hash] Optional state to associate with this worker (e.g., service name).
+				def initialize(process_id: Process.pid, endpoint: Supervisor.endpoint, state: {})
 					super(endpoint: endpoint)
 					
 					@id = nil
 					@process_id = process_id
+					@state = state
 				end
 				
 				# @attribute [Integer] The ID assigned by the supervisor.
@@ -37,6 +39,9 @@ module Async
 				
 				# @attribute [Integer] The process ID of the worker.
 				attr :process_id
+				
+				# @attribute [Hash] State associated with this worker (e.g., service name).
+				attr_accessor :state
 				
 				protected def connected!(connection)
 					super
@@ -49,10 +54,9 @@ module Async
 					# The supervisor allocates a unique ID and returns it
 					# This is a synchronous RPC call that will complete before returning
 					supervisor = connection[:supervisor]
-					@id = supervisor.register(worker_proxy, process_id: @process_id)
+					@id = supervisor.register(worker_proxy, process_id: @process_id, state: @state)
 				end
 			end
 		end
 	end
 end
-

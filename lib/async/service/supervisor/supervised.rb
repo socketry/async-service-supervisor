@@ -24,10 +24,16 @@ module Async
 					::IO::Endpoint.unix(supervisor_ipc_path)
 				end
 				
+				# The state to associate with the supervised worker.
+				# @returns [Hash]
+				def supervisor_worker_state
+					{name: self.name}
+				end
+				
 				# The supervised worker for the current process.
 				# @returns [Worker] The worker client.
 				def supervisor_worker
-					Worker.new(process_id: Process.pid, endpoint: supervisor_endpoint)
+					Worker.new(process_id: Process.pid, endpoint: supervisor_endpoint, state: self.supervisor_worker_state)
 				end
 				
 				# Create a supervised worker for the given instance.
