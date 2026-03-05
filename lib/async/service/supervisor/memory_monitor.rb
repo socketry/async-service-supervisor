@@ -85,11 +85,26 @@ module Async
 					end
 				end
 				
+				# The key used when this monitor's status is aggregated with others.
+				def self.monitor_type
+					:memory_monitor
+				end
+				
+				# Serialize memory cluster data for JSON.
+				def as_json
+					@cluster.as_json
+				end
+				
+				# Serialize to JSON string.
+				def to_json(...)
+					as_json.to_json(...)
+				end
+				
 				# Get status for the memory monitor.
 				#
-				# @returns [Hash] Status including the memory cluster.
+				# @returns [Hash] Hash with type and data keys.
 				def status
-					{memory_monitor: @cluster.as_json}
+					{type: self.class.monitor_type, data: as_json}
 				end
 				
 				# Invoked when a memory leak is detected.

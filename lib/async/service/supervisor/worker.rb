@@ -26,12 +26,17 @@ module Async
 				# @parameter process_id [Integer] The process ID to register with the supervisor.
 				# @parameter endpoint [IO::Endpoint] The supervisor endpoint to connect to.
 				# @parameter state [Hash] Optional state to associate with this worker (e.g., service name).
-				def initialize(process_id: Process.pid, endpoint: Supervisor.endpoint, state: {})
+				# @parameter utilization_schema [Hash | Nil] Optional utilization schema definition.
+				# @parameter utilization_registry [Registry, nil] Optional utilization registry. If nil, a new registry is created.
+				def initialize(process_id: Process.pid, endpoint: Supervisor.endpoint, state: {}, utilization_schema: nil, utilization_registry: nil)
 					super(endpoint: endpoint)
 					
 					@id = nil
 					@process_id = process_id
 					@state = state
+					
+					@utilization_schema = utilization_schema
+					@utilization_registry = utilization_registry || require("async/utilization") && Async::Utilization::Registry.new
 				end
 				
 				# @attribute [Integer] The ID assigned by the supervisor.
@@ -42,6 +47,28 @@ module Async
 				
 				# @attribute [Hash] State associated with this worker (e.g., service name).
 				attr_accessor :state
+				
+				# @attribute [Hash | Nil] Utilization schema definition.
+				attr :utilization_schema
+				
+				# @attribute [Registry] The utilization registry for this worker.
+				attr :utilization_registry
+				
+				# Setup utilization observer for this worker.
+				#
+				# Delegates to WorkerController to set up the shared memory observer.
+				# This method is called by the supervisor to inform the worker of the shared memory
+				# file path and allocated offset.
+				#
+				# @parameter path [String] Path to the shared memory file that the worker should map.
+				# @parameter size [Integer] Size of the shared memory region to map.
+				# @parameter offset [Integer] Offset into the shared memory buffer allocated for this worker.
+				# @returns [Array] Array of [key, type, offset] tuples describing the utilization schema.
+				#   Returns empty array if no utilization schema is configured.
+				def setup_utilization_observer(path, size, offset)
+					controller = WorkerController.new(self)
+					controller.setup_utilization_observer(path, size, offset)
+				end
 				
 				protected def connected!(connection)
 					super

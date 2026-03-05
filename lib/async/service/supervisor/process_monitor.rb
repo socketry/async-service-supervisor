@@ -57,11 +57,26 @@ module Async
 					Process::Metrics::General.capture(ppid: @ppid).transform_values!(&:as_json)
 				end
 				
+				# The key used when this monitor's status is aggregated with others.
+				def self.monitor_type
+					:process_monitor
+				end
+				
+				# Serialize process metrics for JSON.
+				def as_json
+					{ppid: @ppid, metrics: self.metrics}
+				end
+				
+				# Serialize to JSON string.
+				def to_json(...)
+					as_json.to_json(...)
+				end
+				
 				# Get status for the process monitor.
 				#
-				# @returns [Hash] Status including process metrics.
+				# @returns [Hash] Hash with type and data keys.
 				def status
-					{process_monitor: {ppid: @ppid, metrics: self.metrics}}
+					{type: self.class.monitor_type, data: as_json}
 				end
 				
 				# Run the process monitor.
