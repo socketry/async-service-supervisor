@@ -4,6 +4,7 @@
 # Copyright, 2025, by Samuel Williams.
 
 require "async/service/environment"
+require "async/utilization"
 
 module Async
 	module Service
@@ -30,10 +31,38 @@ module Async
 					{name: self.name}
 				end
 				
+				# A default schema for utilization metrics.
+				# @returns [Hash | Nil] The utilization schema or nil if utilization is disabled.
+				def utilization_schema
+					{
+						connections_active: :u32,
+						connections_total: :u64,
+						requests_active: :u32,
+						requests_total: :u64,
+					}
+				end
+				
+				# Get the utilization registry for this service.
+				#
+				# Creates a new registry instance for tracking utilization metrics.
+				# This registry is used by workers to emit metrics that can be collected
+				# by the supervisor's utilization monitor.
+				#
+				# @returns [Async::Utilization::Registry] A new utilization registry instance.
+				def utilization_registry
+					Async::Utilization::Registry.new
+				end
+				
 				# The supervised worker for the current process.
 				# @returns [Worker] The worker client.
 				def supervisor_worker
-					Worker.new(process_id: Process.pid, endpoint: supervisor_endpoint, state: self.supervisor_worker_state)
+					Worker.new(
+						process_id: Process.pid,
+						endpoint: supervisor_endpoint,
+						state: self.supervisor_worker_state,
+						utilization_schema: self.utilization_schema,
+						utilization_registry: self.utilization_registry,
+					)
 				end
 				
 				# Create a supervised worker for the given instance.
