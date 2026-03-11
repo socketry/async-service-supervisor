@@ -144,8 +144,6 @@ service "supervisor" do
 end
 ```
 
-See the {ruby Async::Service::Supervisor::MemoryMonitor Memory Monitor}, {ruby Async::Service::Supervisor::ProcessMonitor Process Monitor}, and {ruby Async::Service::Supervisor::UtilizationMonitor Utilization Monitor} guides for detailed configuration options and best practices.
-
 ### Collecting Diagnostics
 
 The supervisor can collect various diagnostics from workers on demand:
