@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Add `worker_count` to `UtilizationMonitor` aggregated metrics per service, indicating how many workers contributed to each service's metrics (useful for utilization denominator).
+
 ## v0.12.0
 
   - Introduce `UtilizationMonitor`, that uses shared memory to track worker utilization metrics, like total and active requests, connections, etc.

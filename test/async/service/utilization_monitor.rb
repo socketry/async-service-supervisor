@@ -122,7 +122,8 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		status = monitor.status
 		expect(status[:data]["test_service"]).to have_keys(
 			connections_total: be == 100,
-			connections_active: be == 5
+			connections_active: be == 5,
+			worker_count: be == 1
 		)
 	end
 	
@@ -157,7 +158,8 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		status = monitor.status
 		expect(status[:data]["test_service"]).to have_keys(
 			connections_total: be == 125,  # 50 + 75
-			connections_active: be == 5    # 3 + 2
+			connections_active: be == 5,   # 3 + 2
+			worker_count: be == 2          # two workers for same service
 		)
 	end
 	
@@ -193,11 +195,13 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		expect(status[:data]).to have_keys("test_service", "other_service")
 		expect(status[:data]["test_service"]).to have_keys(
 			connections_total: be == 100,
-			connections_active: be == 5
+			connections_active: be == 5,
+			worker_count: be == 1
 		)
 		expect(status[:data]["other_service"]).to have_keys(
 			connections_total: be == 200,
-			connections_active: be == 10
+			connections_active: be == 10,
+			worker_count: be == 1
 		)
 	end
 	
@@ -224,7 +228,8 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		status = monitor.status
 		expect(status[:data]).to have_keys("unknown")
 		expect(status[:data]["unknown"]).to have_keys(
-			connections_total: be == 50
+			connections_total: be == 50,
+			worker_count: be == 1
 		)
 	end
 	

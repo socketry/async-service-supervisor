@@ -303,6 +303,9 @@ module Async
 									aggregated[service_name][key] = value
 								end
 							end
+							
+							# Count workers per service (for utilization denominator)
+							aggregated[service_name][:worker_count] = (aggregated[service_name][:worker_count] || 0) + 1
 						end
 						
 						aggregated
