@@ -7,6 +7,7 @@ require "async/service/environment"
 require "async/service/managed/environment"
 
 require_relative "service"
+require_relative "server"
 
 module Async
 	module Service

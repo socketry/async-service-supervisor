@@ -133,13 +133,16 @@ service "supervisor" do
 			Async::Service::Supervisor::MemoryMonitor.new(
 				interval: 10,
 				maximum_size_limit: 1024 * 1024 * 500  # 500MB limit per process
+			),
+			
+			# Aggregate application-level metrics (connections, requests) from workers:
+			Async::Service::Supervisor::UtilizationMonitor.new(
+				interval: 10
 			)
 		]
 	end
 end
 ```
-
-See the {ruby Async::Service::Supervisor::MemoryMonitor Memory Monitor} and {ruby Async::Service::Supervisor::ProcessMonitor Process Monitor} guides for detailed configuration options and best practices.
 
 ### Collecting Diagnostics
 

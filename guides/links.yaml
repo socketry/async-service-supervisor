@@ -9,3 +9,6 @@ memory-monitor:
 
 process-monitor:
   order: 4
+
+utilization-monitor:
+  order: 5

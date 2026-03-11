@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+- Introduce `UtilizationMonitor`, that uses shared memory to track worker utilization metrics, like total and active requests, connections, etc.
+
 ## v0.11.0
 
   - Add `state` attribute to `SupervisorController` to store per-worker metadata (e.g., service name).

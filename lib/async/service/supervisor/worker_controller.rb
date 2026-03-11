@@ -101,6 +101,19 @@ module Async
 				ensure
 					GC::Profiler.disable
 				end
+				
+				# Setup utilization observer for this worker.
+				#
+				# Delegates to the worker to map the shared memory file and configure its
+				# utilization registry. Called by the supervisor via RPC.
+				#
+				# @parameter path [String] Path to the shared memory file that the worker should map.
+				# @parameter size [Integer] Size of the shared memory region to map.
+				# @parameter offset [Integer] Offset into the shared memory buffer allocated for this worker.
+				# @returns [Array] Array of [key, type, offset] tuples describing the utilization schema.
+				def setup_utilization_observer(path, size, offset)
+					@worker.setup_utilization_observer(path, size, offset)
+				end
 			end
 		end
 	end

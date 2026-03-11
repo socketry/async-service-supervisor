@@ -23,3 +23,8 @@ files:
   title: Process Monitor
   description: This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::ProcessMonitor</code>
     to log CPU and memory metrics for your worker processes.
+- path: utilization-monitor.md
+  title: Utilization Monitor
+  description: This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::UtilizationMonitor</code>
+    to collect and aggregate application-level utilization metrics from your worker
+    processes.
