@@ -104,24 +104,15 @@ module Async
 				
 				# Setup utilization observer for this worker.
 				#
-				# Called by the supervisor to inform the worker of the shared memory file path
-				# and allocated offset. Uses the utilization schema from the worker if available.
+				# Delegates to the worker to map the shared memory file and configure its
+				# utilization registry. Called by the supervisor via RPC.
 				#
 				# @parameter path [String] Path to the shared memory file that the worker should map.
 				# @parameter size [Integer] Size of the shared memory region to map.
 				# @parameter offset [Integer] Offset into the shared memory buffer allocated for this worker.
 				# @returns [Array] Array of [key, type, offset] tuples describing the utilization schema.
-				# 	Returns empty array if no utilization schema is configured.
 				def setup_utilization_observer(path, size, offset)
-					utilization_schema = @worker.utilization_schema
-					return [] unless utilization_schema
-					
-					schema = Async::Utilization::Schema.build(utilization_schema)
-					observer = Async::Utilization::Observer.open(schema, path, size, offset)
-					@worker.utilization_registry.observer = observer
-					
-					# Pass the schema back to the supervisor so it can be used to aggregate the metrics:
-					return observer.schema.to_a
+					@worker.setup_utilization_observer(path, size, offset)
 				end
 			end
 		end

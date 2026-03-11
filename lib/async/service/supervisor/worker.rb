@@ -56,9 +56,9 @@ module Async
 				
 				# Setup utilization observer for this worker.
 				#
-				# Delegates to WorkerController to set up the shared memory observer.
-				# This method is called by the supervisor to inform the worker of the shared memory
-				# file path and allocated offset.
+				# Maps the shared memory file and configures the utilization registry to write
+				# metrics to it. Called by the supervisor (via WorkerController) to inform the
+				# worker of the shared memory file path and allocated offset.
 				#
 				# @parameter path [String] Path to the shared memory file that the worker should map.
 				# @parameter size [Integer] Size of the shared memory region to map.
@@ -66,8 +66,14 @@ module Async
 				# @returns [Array] Array of [key, type, offset] tuples describing the utilization schema.
 				#   Returns empty array if no utilization schema is configured.
 				def setup_utilization_observer(path, size, offset)
-					controller = WorkerController.new(self)
-					controller.setup_utilization_observer(path, size, offset)
+					return [] unless @utilization_schema
+					
+					schema = Async::Utilization::Schema.build(@utilization_schema)
+					observer = Async::Utilization::Observer.open(schema, path, size, offset)
+					@utilization_registry.observer = observer
+					
+					# Pass the schema back to the supervisor so it can be used to aggregate the metrics:
+					observer.schema.to_a
 				end
 				
 				protected def connected!(connection)
