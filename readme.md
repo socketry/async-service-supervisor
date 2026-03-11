@@ -24,9 +24,15 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
   - [Process Monitor](https://socketry.github.io/async-service-supervisor/guides/process-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::ProcessMonitor</code> to log CPU and memory metrics for your worker processes.
 
+  - [Utilization Monitor](https://socketry.github.io/async-service-supervisor/guides/utilization-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::UtilizationMonitor</code> to collect and aggregate application-level utilization metrics from your worker processes.
+
 ## Releases
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
+
+### Unreleased
+
+  - Introduce `UtilizationMonitor`, that uses shared memory to track worker utilization metrics, like total and active requests, connections, etc.
 
 ### v0.11.0
 
@@ -72,10 +78,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
 ### v0.6.2
 
   - Fix timed out RPCs and subsequent responses which should be ignored.
-
-### v0.6.0
-
-  - Add `async:container:supervisor:reload` command to restart the container (blue/green deployment).
 
 ## Contributing
 
