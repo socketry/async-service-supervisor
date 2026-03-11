@@ -30,6 +30,10 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
+### v0.13.0
+
+  - Add `worker_count` to `UtilizationMonitor` aggregated metrics per service, indicating how many workers contributed to each service's metrics (useful for utilization denominator).
+
 ### v0.12.0
 
   - Introduce `UtilizationMonitor`, that uses shared memory to track worker utilization metrics, like total and active requests, connections, etc.
@@ -74,10 +78,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
 ### v0.6.3
 
   - Add agent context documentation.
-
-### v0.6.2
-
-  - Fix timed out RPCs and subsequent responses which should be ignored.
 
 ## Contributing
 

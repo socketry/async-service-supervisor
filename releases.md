@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.13.0
 
   - Add `worker_count` to `UtilizationMonitor` aggregated metrics per service, indicating how many workers contributed to each service's metrics (useful for utilization denominator).
 
