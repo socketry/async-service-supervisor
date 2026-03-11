@@ -1,8 +1,8 @@
 # Releases
 
-## Unreleased
+## v0.12.0
 
-- Introduce `UtilizationMonitor`, that uses shared memory to track worker utilization metrics, like total and active requests, connections, etc.
+  - Introduce `UtilizationMonitor`, that uses shared memory to track worker utilization metrics, like total and active requests, connections, etc.
 
 ## v0.11.0
 

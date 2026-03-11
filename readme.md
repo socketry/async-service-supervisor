@@ -30,7 +30,7 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
-### Unreleased
+### v0.12.0
 
   - Introduce `UtilizationMonitor`, that uses shared memory to track worker utilization metrics, like total and active requests, connections, etc.
 
