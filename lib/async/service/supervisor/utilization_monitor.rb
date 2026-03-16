@@ -134,6 +134,8 @@ module Async
 							end
 						end
 						
+						Console.info(self, "Read utilization segment", worker_id: worker_id, offset: offset, values: result)
+						
 						return result
 					end
 					
@@ -240,7 +242,7 @@ module Async
 									@allocator.update_schema(worker_id, schema)
 									@workers[worker_id] = supervisor_controller
 									
-									Console.info(self, "Registered worker utilization", worker_id: worker_id, offset: offset, schema: schema)
+									Console.info(self, "Registered worker utilization", worker_id: worker_id, path: @path, segment_size: @segment_size, offset: offset, schema: schema)
 								else
 									# Worker didn't provide schema, free the allocation
 									@allocator.free(worker_id)
