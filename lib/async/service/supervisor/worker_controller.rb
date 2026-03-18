@@ -48,7 +48,7 @@ module Async
 				# @parameter log [String] Optional log message to output.
 				def scheduler_dump(path: nil, log: nil)
 					dump(path: path, log: log) do |file|
-						Fiber.scheduler.print_hierarchy(file)
+						::Fiber.scheduler.print_hierarchy(file)
 					end
 				end
 				
@@ -61,7 +61,7 @@ module Async
 					require "objspace"
 					
 					dump(path: path, buffer: false) do |file|
-						ObjectSpace.dump_all(output: file)
+						::ObjectSpace.dump_all(output: file)
 					end
 				end
 				
@@ -72,7 +72,7 @@ module Async
 				# @parameter path [String] Optional file path to save the dump.
 				def thread_dump(path: nil)
 					dump(path: path) do |file|
-						Thread.list.each do |thread|
+						::Thread.list.each do |thread|
 							file.puts(thread.inspect)
 							file.puts(thread.backtrace)
 						end
@@ -85,7 +85,7 @@ module Async
 				#
 				# @returns [Hash] Confirmation that profiling started.
 				def garbage_profile_start
-					GC::Profiler.enable
+					::GC::Profiler.enable
 					return {started: true}
 				end
 				
@@ -99,7 +99,15 @@ module Async
 						file.puts GC::Profiler.result
 					end
 				ensure
-					GC::Profiler.disable
+					::GC::Profiler.disable
+				end
+				
+				# Collect garbage.
+				#
+				# @parameter options [Hash] Options to pass to the garbage collector.
+				# @returns [Hash] Confirmation that garbage collection started.
+				def garbage_collect(**options)
+					::GC.start(**options)
 				end
 				
 				# Setup utilization observer for this worker.

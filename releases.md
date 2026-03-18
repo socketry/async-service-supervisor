@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Add two-phase response to `MemoryMonitor`: invoke GC via RPC before killing workers that exceed limits (unregistered workers are killed immediately).
+
 ## v0.13.0
 
   - Add `worker_count` to `UtilizationMonitor` aggregated metrics per service, indicating how many workers contributed to each service's metrics (useful for utilization denominator).
