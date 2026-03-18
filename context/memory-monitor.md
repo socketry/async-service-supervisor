@@ -11,8 +11,6 @@ Use the `MemoryMonitor` when you need:
 - **Memory leak protection**: Automatically restart workers that continuously accumulate memory.
 - **Resource limits**: Enforce maximum memory usage per worker.
 - **System stability**: Prevent runaway processes from exhausting system memory.
-- **Leak diagnosis**: Capture memory samples when leaks are detected for debugging.
-
 The monitor uses the `memory-leak` gem to track process memory usage over time, detecting abnormal growth patterns that indicate leaks.
 
 ## Usage
@@ -37,11 +35,13 @@ service "supervisor" do
 end
 ```
 
-When a worker exceeds the limit:
-1. The monitor logs the leak detection.
-2. Optionally captures a memory sample for debugging.
-3. Sends `SIGINT` to gracefully shut down the worker.
-4. The container automatically spawns a replacement worker.
+When a worker exceeds the limit, the monitor uses a two-phase response:
+
+1. **First check**: Invokes a major garbage collection in the worker via RPC (`WorkerController#garbage_collect`), giving it a chance to reclaim memory.
+2. **Next check**: If still exceeding → sends `SIGINT` to gracefully shut down the worker. If recovered → logs and continues monitoring.
+3. The container automatically spawns a replacement worker when one is killed.
+
+No worker opt-in is required—workers already have `WorkerController` with `garbage_collect`. If the worker has no RPC connection (e.g. not yet registered), the monitor kills immediately.
 
 ## Configuration Options
 
@@ -79,51 +79,10 @@ Async::Service::Supervisor::MemoryMonitor.new(
 )
 ```
 
-### `memory_sample`
-
-Options for capturing memory samples when a leak is detected. If `nil`, memory sampling is disabled.
-
-Default: `{duration: 30, timeout: 120}`
-
-```ruby
-# Customize memory sampling:
-Async::Service::Supervisor::MemoryMonitor.new(
-	memory_sample: {
-		duration: 60,  # Sample for 60 seconds
-		timeout: 180   # Timeout after 180 seconds
-	}
-)
-
-# Disable memory sampling:
-Async::Service::Supervisor::MemoryMonitor.new(
-	memory_sample: nil
-)
-```
-
 ## Memory Leak Detection
 
 When a memory leak is detected, the monitor will:
 
-1. Log the leak detection with process details.
-2. If `memory_sample` is configured, capture a memory sample from the worker.
-3. Send a `SIGINT` signal to gracefully restart the worker.
-4. The container will automatically restart the worker process.
-
-### Memory Sampling
-
-When a memory leak is detected and `memory_sample` is configured, the monitor requests a lightweight memory sample from the worker. This sample:
-
-- Tracks allocations during the sampling period.
-- Forces a garbage collection.
-- Returns a JSON report showing retained objects.
-
-The report includes:
-- `total_allocated`: Total allocated memory and object count.
-- `total_retained`: Total retained memory and count after GC.
-- `by_gem`: Breakdown by gem/library.
-- `by_file`: Breakdown by source file.
-- `by_location`: Breakdown by specific file:line locations.
-- `by_class`: Breakdown by object class.
-- `strings`: String allocation analysis.
-
-This is much more efficient than a full heap dump using `ObjectSpace.dump_all`.
+1. Invoke a major garbage collection in the worker via RPC (if the worker is registered).
+2. On the next check: if still exceeding, send `SIGINT` to gracefully restart the worker; if recovered, log and continue.
+3. The container automatically restarts the worker process when one is killed.

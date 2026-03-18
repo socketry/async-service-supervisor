@@ -30,6 +30,8 @@ module Async
 					
 					@processes = Hash.new{|hash, key| hash[key] = Set.new.compare_by_identity}
 					
+					@exceeded = Set.new
+					
 					# Queue to serialize cluster modifications to prevent race conditions:
 					@guard = Mutex.new
 				end
@@ -81,6 +83,7 @@ module Async
 							Console.debug(self, "Removing process.", child: {process_id: process_id})
 							@cluster.remove(process_id)
 							@processes.delete(process_id)
+							@exceeded.delete(process_id)
 						end
 					end
 				end
@@ -107,7 +110,58 @@ module Async
 					{type: self.class.monitor_type, data: as_json}
 				end
 				
-				# Invoked when a memory leak is detected.
+				protected def invoke_garbage_collection(process_id)
+					Console.info(self, "Invoking garbage collection!", child: {process_id: process_id})
+					
+					controllers = @processes[process_id]
+					supervisor_controller = controllers&.to_a&.first
+					if supervisor_controller&.worker
+						supervisor_controller.worker.garbage_collect(full_mark: true, immediate_sweep: true)
+						
+						return true
+					end
+					
+					return false
+				rescue => error
+					Console.error(self, "Failed to invoke garbage collection!", child: {process_id: process_id}, exception: error)
+					
+					return false
+				end
+				
+				protected def kill_process(process_id)
+					Process.kill(:INT, process_id)
+				rescue Errno::ESRCH
+					# No such process - he's dead Jim.
+					return true
+				rescue => error
+					Console.warn(self, "Failed to kill process!", child: {process_id: process_id}, exception: error)
+					
+					return false
+				end
+				
+				# Invoked when a leaking process is detected. Implements two-phase response: first
+				# invokes GC via RPC (if worker is registered); on the next check, kills the process.
+				#
+				# @parameter process_id [Integer] The process ID of the process that has a memory leak.
+				# @parameter monitor [Memory::Leak::Monitor] The monitor that detected the memory leak.
+				def handle_leaking_process(process_id, monitor)
+					# First time exceeded, run garbage collection:
+					@exceeded.add(process_id)
+					
+					if !invoke_garbage_collection(process_id)
+						memory_leak_detected(process_id, monitor)
+					end
+					
+					# Always return true as we have processed the memory leak:
+					return true
+				rescue => error
+					Console.warn(self, "Failed to handle memory leak!", child: {process_id: process_id}, exception: error)
+					
+					# For whatever reason, we failed to process the memory leak, the cluster should move on to the next process:
+					return false
+				end
+				
+				# Invoked when a process must be killed. Performs the actual termination.
 				#
 				# @parameter process_id [Integer] The process ID of the process that has a memory leak.
 				# @parameter monitor [Memory::Leak::Monitor] The monitor that detected the memory leak.
@@ -115,17 +169,26 @@ module Async
 				def memory_leak_detected(process_id, monitor)
 					Console.warn(self, "Memory leak detected!", child: {process_id: process_id}, monitor: monitor)
 					
-					# Kill the process gently:
-					begin
-						Console.info(self, "Killing process!", child: {process_id: process_id})
-						Process.kill(:INT, process_id)
-					rescue Errno::ESRCH
-						# No such process - he's dead Jim.
-					rescue => error
-						Console.warn(self, "Failed to kill process!", child: {process_id: process_id}, exception: error)
+					return kill_process(process_id)
+				end
+				
+				# Run one check iteration (used by #run, exposed for testing).
+				def check_cluster
+					checked = Set.new
+					
+					@cluster.check! do |process_id, monitor|
+						checked.add(process_id)
+						
+						if @exceeded.include?(process_id)
+							memory_leak_detected(process_id, monitor)
+						else
+							handle_leaking_process(process_id, monitor)
+						end
 					end
 					
-					true
+					@exceeded &= checked
+					
+					return @exceeded
 				end
 				
 				# Run the memory monitor.
@@ -134,16 +197,7 @@ module Async
 				def run
 					Async do
 						Loop.run(interval: @interval) do
-							@guard.synchronize do
-								# This block must return true if the process was killed.
-								@cluster.check! do |process_id, monitor|
-									begin
-										memory_leak_detected(process_id, monitor)
-									rescue => error
-										Console.error(self, "Failed to handle memory leak!", child: {process_id: process_id}, exception: error)
-									end
-								end
-							end
+							@guard.synchronize{check_cluster}
 						end
 					end
 				end
