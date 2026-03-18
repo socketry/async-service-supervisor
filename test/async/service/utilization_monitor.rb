@@ -264,6 +264,37 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		expect(monitor.status[:data]).to be == {}
 	end
 	
+	it "does not resize existing file when recreating the utilization monitor" do
+		# When the supervisor restarts, it recreates the SegmentAllocator. Without unlink,
+		# File.open(path, "w+b") truncates the existing file. With unlink, we remove the file
+		# first so the new allocator gets a fresh file; any process with the old file mapped
+		# keeps a valid mapping to the unlinked inode.
+		allocator = Async::Service::Supervisor::UtilizationMonitor::SegmentAllocator.new(
+			shm_path, size: file_size, segment_size: segment_size
+		)
+		
+		# Resize to make the file larger than initial:
+		larger_size = file_size * 2
+		allocator.resize(larger_size)
+		
+		# Open the file and keep a handle; this simulates a worker that has it mapped:
+		existing_file = File.open(shm_path, "rb")
+		original_size = existing_file.size
+		expect(original_size).to be == larger_size
+		
+		allocator.close
+		
+		# Simulate supervisor restart - recreates allocator at same path:
+		Async::Service::Supervisor::UtilizationMonitor::SegmentAllocator.new(
+			shm_path, size: file_size, segment_size: segment_size
+		)
+		
+		# Our handle still references the original inode; it should not have been resized:
+		expect(existing_file.size).to be == original_size
+	ensure
+		existing_file&.close
+	end
+	
 	it "frees segments when workers are removed" do
 		# Register first worker
 		monitor.register(supervisor_controller)
