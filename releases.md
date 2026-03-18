@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.13.1
 
   - Unlink shared memory file before opening on supervisor restart, preventing SIGBUS when workers still have the file mapped.
 
