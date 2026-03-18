@@ -1,16 +1,14 @@
 # Async::Service::Supervisor
 
-Provides a supervisor service for
+Provides a process supervision system for `async-service` applications, built on top of `Async::Bus` for reliable IPC between a supervisor process and its workers.
 
 [![Development Status](https://github.com/socketry/async-service-supervisor/workflows/Test/badge.svg)](https://github.com/socketry/async-service-supervisor/actions?workflow=Test)
 
 ## Features
 
-  - Supports multi-process, multi-thread and hybrid containers.
-  - Automatic scalability based on physical hardware.
-  - Direct integration with [systemd](https://www.freedesktop.org/software/systemd/man/sd_notify.html) using `$NOTIFY_SOCKET`.
-  - Internal process readiness protocol for handling state changes.
-  - Automatic restart of failed processes.
+  - Workers connect to the supervisor process via IPC and report their lifecycle.
+  - Remote diagnostics: workers expose memory dump and scheduler dump operations via the supervisor.
+  - Provides a flexible framework for monitoring worker processes and taking action when issues are detected (e.g. memory leaks, high CPU usage, etc.).
 
 ## Usage
 
