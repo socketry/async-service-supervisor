@@ -38,6 +38,7 @@ module Async
 						@segment_size = segment_size
 						@growth_factor = growth_factor
 						
+						File.unlink(path) rescue nil
 						@file = File.open(path, "w+b")
 						@file.truncate(size)
 						# Supervisor maps the file for reading worker data

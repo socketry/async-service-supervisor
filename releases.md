@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Unlink shared memory file before opening on supervisor restart, preventing SIGBUS when workers still have the file mapped.
+
 ## v0.13.0
 
   - Add `worker_count` to `UtilizationMonitor` aggregated metrics per service, indicating how many workers contributed to each service's metrics (useful for utilization denominator).
