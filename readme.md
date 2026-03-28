@@ -28,6 +28,10 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
+### v0.14.0
+
+  - Add `Worker#make_controller` as an override point for providing a custom worker controller with additional RPCs.
+
 ### v0.13.1
 
   - Unlink shared memory file before opening on supervisor restart, preventing SIGBUS when workers still have the file mapped.
@@ -72,10 +76,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
 ### v0.7.0
 
   - If a memory leak is detected, sample memory usage for 60 seconds before exiting.
-
-### v0.6.4
-
-  - Make client task (in supervised worker) transient, so that it doesn't keep the reactor alive unnecessarily. It also won't be stopped by default when SIGINT is received, so that the worker will remain connected to the supervisor until the worker is completely terminated.
 
 ## Contributing
 

@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.14.0
 
   - Add `Worker#make_controller` as an override point for providing a custom worker controller with additional RPCs.
 
