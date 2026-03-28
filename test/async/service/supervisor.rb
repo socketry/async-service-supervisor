@@ -87,6 +87,15 @@ describe Async::Service::Supervisor do
 		end
 	end
 	
+	with "#make_controller" do
+		it "returns a WorkerController instance" do
+			worker = Async::Service::Supervisor::Worker.new(process_id: ::Process.pid, endpoint: endpoint)
+			controller = worker.make_controller
+			
+			expect(controller).to be_a(Async::Service::Supervisor::WorkerController)
+		end
+	end
+	
 	with "array-like access" do
 		it "gets worker proxy via connection_id and invokes operations" do
 			worker = Async::Service::Supervisor::Worker.new(process_id: ::Process.pid, endpoint: endpoint)

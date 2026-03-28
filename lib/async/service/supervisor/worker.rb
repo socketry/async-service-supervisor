@@ -76,12 +76,20 @@ module Async
 					observer.schema.to_a
 				end
 				
+				# Create the worker controller for this worker.
+				#
+				# Override this method to provide a custom worker controller that exposes additional RPCs to the supervisor.
+				#
+				# @returns [WorkerController] The worker controller instance.
+				def make_controller
+					WorkerController.new(self)
+				end
+				
 				protected def connected!(connection)
 					super
 					
 					# Create and bind worker controller
-					worker_controller = WorkerController.new(self)
-					worker_proxy = connection.bind(:worker, worker_controller)
+					worker_proxy = connection.bind(:worker, make_controller)
 					
 					# Register the worker with the supervisor
 					# The supervisor allocates a unique ID and returns it

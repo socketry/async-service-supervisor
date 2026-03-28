@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Add `Worker#make_controller` as an override point for providing a custom worker controller with additional RPCs.
+
 ## v0.13.1
 
   - Unlink shared memory file before opening on supervisor restart, preventing SIGBUS when workers still have the file mapped.
