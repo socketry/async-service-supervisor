@@ -87,30 +87,34 @@ module Async
 				# @parameter parent [Async::Task] The parent task to run under.
 				def run
 					Sync do |task|
+						barrier = Async::Barrier.new
+						
 						# Start all monitors:
 						@monitors.each do |monitor|
-							monitor.run
+							monitor.run(parent: barrier)
 						rescue => error
 							Console.error(self, "Error while starting monitor!", monitor: monitor, exception: error)
 						end
 						
-						# Accept connections from workers:
-						self.accept do |connection|
-							# Create a supervisor controller for this connection:
-							supervisor_controller = SupervisorController.new(self, connection)
-							
-							# Bind supervisor controller:
-							connection.bind(:supervisor, supervisor_controller)
-							
-							# Run the connection:
-							connection.run
-						ensure
-							self.remove(supervisor_controller)
+						barrier.async do
+							# Accept connections from workers:
+							self.accept do |connection|
+								# Create a supervisor controller for this connection:
+								supervisor_controller = SupervisorController.new(self, connection)
+								
+								# Bind supervisor controller:
+								connection.bind(:supervisor, supervisor_controller)
+								
+								# Run the connection:
+								connection.run
+							ensure
+								self.remove(supervisor_controller)
+							end
 						end
 						
-						task.children&.each(&:wait)
+						barrier.wait
 					ensure
-						task.stop
+						barrier&.stop
 					end
 				end
 			end

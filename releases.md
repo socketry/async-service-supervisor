@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Improve robustness and error handling of default monitors and server loop, ensuring that monitor failures either completely crash the server or retry appropriately, rather than leaving the server in a broken state.
+
 ## v0.14.0
 
   - Add `Worker#make_controller` as an override point for providing a custom worker controller with additional RPCs.

@@ -6,7 +6,7 @@
 require "memory/leak/cluster"
 require "set"
 
-require_relative "loop"
+require_relative "monitor"
 
 module Async
 	module Service
@@ -14,7 +14,7 @@ module Async
 			# Monitors worker memory usage and restarts workers that exceed limits.
 			#
 			# Uses the `memory` gem to track process memory and detect leaks.
-			class MemoryMonitor
+			class MemoryMonitor < Monitor
 				# Create a new memory monitor.
 				#
 				# @parameter interval [Integer] The interval at which to check for memory leaks.
@@ -22,7 +22,7 @@ module Async
 				# @parameter free_size_minimum [Integer] The minimum free memory threshold, or nil for no threshold.
 				# @parameter options [Hash] Options to pass to the cluster when adding processes.
 				def initialize(interval: 10, total_size_limit: nil, free_size_minimum: nil, **options)
-					@interval = interval
+					super(interval: interval)
 					@cluster = Memory::Leak::Cluster.new(total_size_limit: total_size_limit, free_size_minimum: free_size_minimum)
 					
 					# We use these options when adding processes to the cluster:
@@ -85,26 +85,9 @@ module Async
 					end
 				end
 				
-				# The key used when this monitor's status is aggregated with others.
-				def self.monitor_type
-					:memory_monitor
-				end
-				
 				# Serialize memory cluster data for JSON.
 				def as_json
 					@cluster.as_json
-				end
-				
-				# Serialize to JSON string.
-				def to_json(...)
-					as_json.to_json(...)
-				end
-				
-				# Get status for the memory monitor.
-				#
-				# @returns [Hash] Hash with type and data keys.
-				def status
-					{type: self.class.monitor_type, data: as_json}
 				end
 				
 				# Invoked when a memory leak is detected.
@@ -128,21 +111,15 @@ module Async
 					true
 				end
 				
-				# Run the memory monitor.
-				#
-				# @returns [Async::Task] The task that is running the memory monitor.
-				def run
-					Async do
-						Loop.run(interval: @interval) do
-							@guard.synchronize do
-								# This block must return true if the process was killed.
-								@cluster.check! do |process_id, monitor|
-									begin
-										memory_leak_detected(process_id, monitor)
-									rescue => error
-										Console.error(self, "Failed to handle memory leak!", child: {process_id: process_id}, exception: error)
-									end
-								end
+				# Run one iteration of the memory monitor.
+				def run_once
+					@guard.synchronize do
+						# This block must return true if the process was killed.
+						@cluster.check! do |process_id, monitor|
+							begin
+								memory_leak_detected(process_id, monitor)
+							rescue => error
+								Console.error(self, "Failed to handle memory leak!", child: {process_id: process_id}, exception: error)
 							end
 						end
 					end

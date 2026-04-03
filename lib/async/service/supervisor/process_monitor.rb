@@ -4,7 +4,7 @@
 # Copyright, 2025-2026, by Samuel Williams.
 
 require "process/metrics"
-require_relative "loop"
+require_relative "monitor"
 
 module Async
 	module Service
@@ -15,13 +15,13 @@ module Async
 			# Unlike {MemoryMonitor}, this monitor captures metrics for the entire process tree
 			# by tracking the parent process ID (ppid), which is more efficient than tracking
 			# individual processes.
-			class ProcessMonitor
+			class ProcessMonitor < Monitor
 				# Create a new process monitor.
 				#
 				# @parameter interval [Integer] The interval in seconds at which to log process metrics.
 				# @parameter ppid [Integer] The parent process ID to monitor. If nil, uses the current process to capture its children.
 				def initialize(interval: 60, ppid: nil)
-					@interval = interval
+					super(interval: interval)
 					@ppid = ppid || Process.ppid
 				end
 				
@@ -67,33 +67,13 @@ module Async
 					{ppid: @ppid, metrics: self.metrics}
 				end
 				
-				# Serialize to JSON string.
-				def to_json(...)
-					as_json.to_json(...)
-				end
-				
-				# Get status for the process monitor.
-				#
-				# @returns [Hash] Hash with type and data keys.
-				def status
-					{type: self.class.monitor_type, data: as_json}
-				end
-				
-				# Run the process monitor.
-				#
-				# Periodically captures and logs process metrics for the entire process tree.
-				#
-				# @returns [Async::Task] The task that is running the process monitor.
-				def run
-					Async do
-						Loop.run(interval: @interval) do
-							metrics = self.metrics
-							
-							# Log each process individually for better searchability in log platforms:
-							metrics.each do |process_id, general|
-								Console.info(self, "Process metrics captured.", general: general)
-							end
-						end
+				# Run one iteration of the process monitor.
+				def run_once
+					metrics = self.metrics
+					
+					# Log each process individually for better searchability in log platforms:
+					metrics.each do |process_id, general|
+						Console.info(self, "Process metrics captured.", general: general)
 					end
 				end
 			end

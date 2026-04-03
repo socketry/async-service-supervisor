@@ -5,7 +5,7 @@
 
 require "set"
 
-require_relative "loop"
+require_relative "monitor"
 require "async/utilization"
 
 module Async
@@ -15,7 +15,7 @@ module Async
 			#
 			# Uses shared memory to efficiently collect utilization metrics from workers
 			# and aggregates them by service name for monitoring and reporting.
-			class UtilizationMonitor
+			class UtilizationMonitor < Monitor
 				# Allocates and manages shared memory segments for worker utilization data.
 				#
 				# Manages a shared memory file that workers can write utilization metrics to.
@@ -195,8 +195,8 @@ module Async
 				# @parameter size [Integer] Total size of the shared memory buffer.
 				# @parameter segment_size [Integer] Size of each allocation segment (default: 512 bytes).
 				def initialize(path: "utilization.shm", interval: 10, size: IO::Buffer::PAGE_SIZE * 8, segment_size: 512)
+					super(interval: interval)
 					@path = path
-					@interval = interval
 					@segment_size = segment_size
 					
 					@allocator = SegmentAllocator.new(path, size: size, segment_size: segment_size)
@@ -313,21 +313,6 @@ module Async
 					end
 				end
 				
-				# Serialize to JSON string.
-				def to_json(...)
-					as_json.to_json(...)
-				end
-				
-				# Get aggregated utilization status by service name.
-				#
-				# Reads utilization data from all registered workers and aggregates it
-				# by service name (from supervisor_controller.state[:name]).
-				#
-				# @returns [Hash] Hash with type and data keys.
-				def status
-					{type: self.class.monitor_type, data: as_json}
-				end
-				
 				# Emit the utilization metrics.
 				#
 				# @parameter status [Hash] The utilization metrics.
@@ -335,17 +320,9 @@ module Async
 					Console.info(self, "Utilization:", metrics: metrics)
 				end
 				
-				# Run the utilization monitor.
-				#
-				# Periodically aggregates utilization data from all workers.
-				#
-				# @returns [Async::Task] The task that is running the utilization monitor.
-				def run
-					Async do
-						Loop.run(interval: @interval) do
-							self.emit(self.as_json)
-						end
-					end
+				# Run one iteration of the utilization monitor.
+				def run_once
+					self.emit(self.as_json)
 				end
 			end
 		end

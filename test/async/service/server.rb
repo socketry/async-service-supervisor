@@ -12,7 +12,7 @@ describe Async::Service::Supervisor::Server do
 	
 	with "failing monitor" do
 		let(:failing_monitor) do
-			Class.new do
+			Class.new(Async::Service::Supervisor::Monitor) do
 				def run
 				end
 				
@@ -88,6 +88,28 @@ describe Async::Service::Supervisor::Server do
 				result = supervisor.status
 				expect(result).to be_a(Array)
 			end
+		end
+	end
+	
+	with "broken monitor" do
+		let(:broken_monitor) do
+			Class.new(Async::Service::Supervisor::Monitor) do
+				def run(parent: Async::Task.current)
+					parent.async do
+						raise "Monitor failed to run!"
+					end
+				end
+			end.new
+		end
+		
+		let(:monitors) {[broken_monitor, registration_monitor]}
+		
+		it "can handle monitor run failures" do
+			expect{@server_task.wait}.to raise_exception(RuntimeError, message: be == "Monitor failed to run!")
+		ensure
+			# Bypass normal shutdown to avoid stopping the server which is already failed:
+			@server_task&.stop
+			@server_task = nil
 		end
 	end
 end
