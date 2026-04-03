@@ -33,7 +33,7 @@ describe Async::Service::Supervisor::Monitor do
 	
 	with "#run_once" do
 		it "does nothing by default" do
-			expect { monitor.run_once }.not.to raise_exception
+			expect{monitor.run_once}.not.to raise_exception
 		end
 	end
 	

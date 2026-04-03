@@ -438,17 +438,17 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		#   3. Write a value and confirm the supervisor can read it.
 		#   4. Force a resize by registering a second worker (free list is empty → resize).
 		#   5. Write a new value from the first worker and confirm the supervisor still reads it.
-
+		
 		initial_size = page_size  # gives exactly page_size / segment_size segments
 		segments_per_page = page_size / segment_size
-
+		
 		small_monitor = subject.new(
 			path: File.join(root, "utilization.shm"),
 			interval: 1,
 			size: initial_size,
 			segment_size: segment_size
 		)
-
+		
 		# Fill all but one segment so the free list has exactly one slot left.
 		# (Skip this loop when segments_per_page == 1 — the first worker will itself
 		# consume the only slot and the second will trigger the resize.)
@@ -469,17 +469,17 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 			filler_controllers << filler_controller
 			small_monitor.register(filler_controller)
 		end
-
+		
 		# Register the worker-under-test — it takes the last free segment and
 		# maps the file at its current (pre-resize) size.
 		small_monitor.register(supervisor_controller)
 		worker_registry.metric(:connections_total).set(42)
 		worker_registry.metric(:connections_active).set(7)
-
+		
 		status_before = small_monitor.status
 		expect(status_before[:data]).to have_keys("test_service")
 		expect(status_before[:data]["test_service"][:connections_total]).to be == 42
-
+		
 		# Now trigger a resize: register one more worker — the free list is empty
 		# so SegmentAllocator#allocate will call resize before handing out a slot.
 		resize_registry = Async::Utilization::Registry.new
@@ -494,25 +494,25 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		resize_controller.define_singleton_method(:id){999}
 		resize_controller.define_singleton_method(:state){{name: "filler"}}
 		resize_controller.define_singleton_method(:worker){resize_worker}
-
+		
 		size_before_resize = small_monitor.instance_variable_get(:@allocator).size
 		small_monitor.register(resize_controller)
 		size_after_resize = small_monitor.instance_variable_get(:@allocator).size
-
+		
 		# Confirm the resize actually happened
 		expect(size_after_resize).to be > size_before_resize
-
+		
 		# The pre-resize worker must still be able to write through its Observer
 		# and have the supervisor read the updated value.
 		worker_registry.metric(:connections_total).set(99)
 		worker_registry.metric(:connections_active).set(3)
-
+		
 		status_after = small_monitor.status
 		expect(status_after[:data]).to have_keys("test_service")
 		expect(status_after[:data]["test_service"][:connections_total]).to be == 99
 		expect(status_after[:data]["test_service"][:connections_active]).to be == 3
 	end
-
+	
 	with "#run" do
 		include Sus::Fixtures::Async::SchedulerContext
 		
