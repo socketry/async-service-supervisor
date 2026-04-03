@@ -28,6 +28,10 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
+### v0.15.0
+
+  - Improve robustness and error handling of default monitors and server loop, ensuring that monitor failures either completely crash the server or retry appropriately, rather than leaving the server in a broken state.
+
 ### v0.14.0
 
   - Add `Worker#make_controller` as an override point for providing a custom worker controller with additional RPCs.
@@ -72,10 +76,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
 
   - Add `Async::Service::Supervisor::ProcessMonitor` for logging CPU and memory metrics periodically.
   - Fix documentation to use correct `maximum_size_limit:` parameter name for `MemoryMonitor` (was incorrectly documented as `limit:`).
-
-### v0.7.0
-
-  - If a memory leak is detected, sample memory usage for 60 seconds before exiting.
 
 ## Contributing
 
