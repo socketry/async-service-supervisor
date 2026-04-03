@@ -426,6 +426,93 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		expect(service_data[:connections_total]).to be >= 1
 	end
 	
+	it "preserves observer mappings in pre-resize workers after file is resized" do
+		# This is a regression test for a flatline bug: when the supervisor resizes
+		# the shared memory file, workers that mapped the file before the resize hold
+		# IO::Buffer slices tied to the old mmap. After truncate + remap on the
+		# supervisor side, those worker slices may become invalid so writes disappear.
+		#
+		# Steps:
+		#   1. Create a monitor with exactly one segment of capacity.
+		#   2. Register a worker (it maps the file and gets an Observer).
+		#   3. Write a value and confirm the supervisor can read it.
+		#   4. Force a resize by registering a second worker (free list is empty → resize).
+		#   5. Write a new value from the first worker and confirm the supervisor still reads it.
+
+		initial_size = page_size  # gives exactly page_size / segment_size segments
+		segments_per_page = page_size / segment_size
+
+		small_monitor = subject.new(
+			path: File.join(root, "utilization.shm"),
+			interval: 1,
+			size: initial_size,
+			segment_size: segment_size
+		)
+
+		# Fill all but one segment so the free list has exactly one slot left.
+		# (Skip this loop when segments_per_page == 1 — the first worker will itself
+		# consume the only slot and the second will trigger the resize.)
+		filler_controllers = []
+		(segments_per_page - 1).times do |i|
+			filler_registry = Async::Utilization::Registry.new
+			filler_worker = Async::Service::Supervisor::Worker.new(
+				process_id: Process.pid,
+				endpoint: IO::Endpoint.unix(File.join(root, "filler#{i}.ipc")),
+				state: {name: "filler"},
+				utilization_schema: utilization_schema,
+				utilization_registry: filler_registry
+			)
+			filler_controller = Object.new
+			filler_controller.define_singleton_method(:id){100 + i}
+			filler_controller.define_singleton_method(:state){{name: "filler"}}
+			filler_controller.define_singleton_method(:worker){filler_worker}
+			filler_controllers << filler_controller
+			small_monitor.register(filler_controller)
+		end
+
+		# Register the worker-under-test — it takes the last free segment and
+		# maps the file at its current (pre-resize) size.
+		small_monitor.register(supervisor_controller)
+		worker_registry.metric(:connections_total).set(42)
+		worker_registry.metric(:connections_active).set(7)
+
+		status_before = small_monitor.status
+		expect(status_before[:data]).to have_keys("test_service")
+		expect(status_before[:data]["test_service"][:connections_total]).to be == 42
+
+		# Now trigger a resize: register one more worker — the free list is empty
+		# so SegmentAllocator#allocate will call resize before handing out a slot.
+		resize_registry = Async::Utilization::Registry.new
+		resize_worker = Async::Service::Supervisor::Worker.new(
+			process_id: Process.pid,
+			endpoint: IO::Endpoint.unix(File.join(root, "resize_trigger.ipc")),
+			state: {name: "filler"},
+			utilization_schema: utilization_schema,
+			utilization_registry: resize_registry
+		)
+		resize_controller = Object.new
+		resize_controller.define_singleton_method(:id){999}
+		resize_controller.define_singleton_method(:state){{name: "filler"}}
+		resize_controller.define_singleton_method(:worker){resize_worker}
+
+		size_before_resize = small_monitor.instance_variable_get(:@allocator).size
+		small_monitor.register(resize_controller)
+		size_after_resize = small_monitor.instance_variable_get(:@allocator).size
+
+		# Confirm the resize actually happened
+		expect(size_after_resize).to be > size_before_resize
+
+		# The pre-resize worker must still be able to write through its Observer
+		# and have the supervisor read the updated value.
+		worker_registry.metric(:connections_total).set(99)
+		worker_registry.metric(:connections_active).set(3)
+
+		status_after = small_monitor.status
+		expect(status_after[:data]).to have_keys("test_service")
+		expect(status_after[:data]["test_service"][:connections_total]).to be == 99
+		expect(status_after[:data]["test_service"][:connections_active]).to be == 3
+	end
+
 	with "#run" do
 		include Sus::Fixtures::Async::SchedulerContext
 		
