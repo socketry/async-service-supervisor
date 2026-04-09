@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.16.0
 
   - Add `ProcessMonitor#emit(metrics)` as an override point for subclasses to consume captured process metrics (e.g. emitting StatsD gauges).
 

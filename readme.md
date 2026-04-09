@@ -28,6 +28,10 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
+### v0.16.0
+
+  - Add `ProcessMonitor#emit(metrics)` as an override point for subclasses to consume captured process metrics (e.g. emitting StatsD gauges).
+
 ### v0.15.0
 
   - Improve robustness and error handling of default monitors and server loop, ensuring that monitor failures either completely crash the server or retry appropriately, rather than leaving the server in a broken state.
@@ -71,11 +75,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
   - Robust monitor loop handling - restart on failure, and align loop iterations.
   - Disable memory sampler by default and use text output format.
       - Introduce support for redirecting dump output to logs.
-
-### v0.8.0
-
-  - Add `Async::Service::Supervisor::ProcessMonitor` for logging CPU and memory metrics periodically.
-  - Fix documentation to use correct `maximum_size_limit:` parameter name for `MemoryMonitor` (was incorrectly documented as `limit:`).
 
 ## Contributing
 
