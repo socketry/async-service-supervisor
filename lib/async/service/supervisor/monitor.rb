@@ -8,11 +8,20 @@ require "async/loop"
 module Async
 	module Service
 		module Supervisor
+			# Base class for supervisor monitors that run periodically within the supervisor process.
+			#
+			# Subclasses should override {#run_once} to implement specific monitoring logic.
 			class Monitor
+				# Initialize a new monitor.
+				#
+				# @parameter interval [Numeric] The interval in seconds between each invocation of {#run_once}.
 				def initialize(interval: 1.0)
 					@interval = interval
 				end
 				
+				# Serialize the monitor state for JSON representation.
+				#
+				# @returns [Hash] An empty hash by default; subclasses should override to include relevant state.
 				def as_json(...)
 					{}
 				end
