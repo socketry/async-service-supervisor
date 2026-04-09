@@ -67,14 +67,19 @@ module Async
 					{ppid: @ppid, metrics: self.metrics}
 				end
 				
-				# Run one iteration of the process monitor.
-				def run_once
-					metrics = self.metrics
-					
+				# Emit the process metrics.
+				#
+				# @parameter metrics [Hash] The process metrics to emit.
+				def emit(metrics)
 					# Log each process individually for better searchability in log platforms:
 					metrics.each do |process_id, general|
 						Console.info(self, "Process metrics captured.", general: general)
 					end
+				end
+				
+				# Run one iteration of the process monitor.
+				def run_once
+					self.emit(self.metrics)
 				end
 			end
 		end

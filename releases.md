@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Add `ProcessMonitor#emit(metrics)` as an override point for subclasses to consume captured process metrics (e.g. emitting StatsD gauges).
+
 ## v0.15.0
 
   - Improve robustness and error handling of default monitors and server loop, ensuring that monitor failures either completely crash the server or retry appropriately, rather than leaving the server in a broken state.
