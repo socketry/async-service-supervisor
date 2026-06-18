@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Add opt-in `metrics` and `traces` providers for supervisor process metrics, utilization metrics, and worker lifecycle tracing.
+
 ## v0.16.0
 
   - Add `ProcessMonitor#emit(metrics)` as an override point for subclasses to consume captured process metrics (e.g. emitting StatsD gauges).
