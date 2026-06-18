@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.17.0
 
   - Add opt-in `metrics` and `traces` providers for supervisor process metrics, utilization metrics, and worker lifecycle tracing.
 

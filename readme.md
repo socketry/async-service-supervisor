@@ -28,6 +28,10 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
+### v0.17.0
+
+  - Add opt-in `metrics` and `traces` providers for supervisor process metrics, utilization metrics, and worker lifecycle tracing.
+
 ### v0.16.0
 
   - Add `ProcessMonitor#emit(metrics)` as an override point for subclasses to consume captured process metrics (e.g. emitting StatsD gauges).
@@ -68,13 +72,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
 ### v0.9.1
 
   - Close `Call` queue if asynchronous call fails during dispatch - further messages will fail with `ClosedQueueError`.
-
-### v0.9.0
-
-  - Better handling of write failures in `Connection::Call.dispatch`, ensuring we don't leak calls.
-  - Robust monitor loop handling - restart on failure, and align loop iterations.
-  - Disable memory sampler by default and use text output format.
-      - Introduce support for redirecting dump output to logs.
 
 ## Contributing
 
