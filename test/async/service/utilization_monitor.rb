@@ -127,6 +127,21 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		)
 	end
 	
+	it "can sample utilization data" do
+		monitor.register(supervisor_controller)
+		
+		worker_registry.metric(:connections_total).set(100)
+		worker_registry.metric(:connections_active).set(5)
+		
+		expect(monitor.sample).to have_keys(
+			"test_service" => have_keys(
+				connections_total: be == 100,
+				connections_active: be == 5,
+				worker_count: be == 1
+			)
+		)
+	end
+	
 	it "aggregates metrics from multiple workers" do
 		# Create second worker
 		registry2 = Async::Utilization::Registry.new

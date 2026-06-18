@@ -277,10 +277,10 @@ module Async
 					:utilization_monitor
 				end
 				
-				# Serialize utilization data for JSON.
+				# Sample aggregated utilization data.
 				#
 				# @returns [Hash] Hash mapping service names to aggregated utilization metrics.
-				def as_json
+				def sample
 					@guard.synchronize do
 						aggregated = {}
 						
@@ -311,6 +311,13 @@ module Async
 						
 						aggregated
 					end
+				end
+				
+				# Serialize utilization data for JSON.
+				#
+				# @returns [Hash] Hash mapping service names to aggregated utilization metrics.
+				def as_json
+					self.sample
 				end
 				
 				# Emit the utilization metrics.

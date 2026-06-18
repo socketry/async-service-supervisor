@@ -5,3 +5,6 @@
 
 require "covered/sus"
 include Covered::Sus
+
+ENV["METRICS_BACKEND"] ||= "metrics/backend/test"
+ENV["TRACES_BACKEND"] ||= "traces/backend/test"
