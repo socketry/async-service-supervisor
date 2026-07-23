@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-  - Allow supervised services to supply explicit worker state during preparation and worker construction.
+  - Allow supervised services to merge additional worker state during preparation and worker construction.
 
 ## v0.17.0
 

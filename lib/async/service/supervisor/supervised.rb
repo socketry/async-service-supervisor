@@ -56,9 +56,11 @@ module Async
 				end
 				
 				# The supervised worker for the current process.
-				# @parameter state [Hash] The state to register with the supervisor.
+				# @parameter state [Hash | Nil] Additional state to register with the supervisor.
 				# @returns [Worker] The worker client.
-				def supervisor_worker(state: self.supervisor_worker_state)
+				def supervisor_worker(state: nil)
+					state = self.supervisor_worker_state.merge(state || {})
+					
 					Worker.new(
 						process_id: Process.pid,
 						endpoint: supervisor_endpoint,
@@ -71,9 +73,9 @@ module Async
 				# Create a supervised worker for the given instance.
 				#
 				# @parameter instance [Async::Container::Instance] The container instance.
-				# @parameter state [Hash] The state to register with the supervisor.
+				# @parameter state [Hash | Nil] Additional state to register with the supervisor.
 				# @returns [Worker] The worker client.
-				def prepare!(instance, state: self.supervisor_worker_state)
+				def prepare!(instance, state: nil)
 					super(instance)
 					
 					supervisor_worker(state: state).run
