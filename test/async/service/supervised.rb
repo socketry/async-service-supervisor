@@ -56,5 +56,26 @@ describe Async::Service::Supervisor::Supervised do
 	ensure
 		worker_task&.stop
 	end
+	
+	it "can register explicit worker state" do
+		environment = Async::Service::Environment.build(root: @root) do
+			name "simple-service"
+			
+			service_class {SimpleService}
+			
+			include Async::Service::Supervisor::Supervised
+		end
+		
+		state = {
+			name: "simple-service",
+			endpoint: {name: "http", addresses: [{address: "127.0.0.1", port: 9292}]},
+		}
+		worker = environment.evaluator.supervisor_worker(state: state)
+		worker_task = worker.run
+		
+		event = registration_monitor.pop
+		expect(event.supervisor_controller.state).to be == state
+	ensure
+		worker_task&.stop
+	end
 end
-
