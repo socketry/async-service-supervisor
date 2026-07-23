@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.18.0
 
   - Allow supervised services to merge additional worker state during preparation and worker construction.
 

@@ -28,6 +28,10 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
+### v0.18.0
+
+  - Allow supervised services to merge additional worker state during preparation and worker construction.
+
 ### v0.17.0
 
   - Add opt-in `metrics` and `traces` providers for supervisor process metrics, utilization metrics, and worker lifecycle tracing.
@@ -68,10 +72,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
   - Remove `memory_sample` functionality - it wasn't very useful and added a lot of complexity.
   - Add support for `Memory::Leak::Cluster` `free_size_minimum:` option.
   - Remove extraneous "Memory leak detected\!" logs.
-
-### v0.9.1
-
-  - Close `Call` queue if asynchronous call fails during dispatch - further messages will fail with `ClosedQueueError`.
 
 ## Contributing
 
