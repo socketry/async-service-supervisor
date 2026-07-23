@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Allow supervised services to merge additional worker state during preparation and worker construction.
+
 ## v0.17.0
 
   - Add opt-in `metrics` and `traces` providers for supervisor process metrics, utilization metrics, and worker lifecycle tracing.
