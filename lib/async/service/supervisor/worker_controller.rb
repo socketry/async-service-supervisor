@@ -57,11 +57,12 @@ module Async
 				# This is a heavyweight operation that dumps all objects in the heap.
 				#
 				# @parameter path [String] Optional file path to save the dump.
-				def memory_dump(path: nil)
+				# @parameter shapes [Boolean] Whether to include Ruby shape-tree records.
+				def memory_dump(path: nil, shapes: true)
 					require "objspace"
 					
 					dump(path: path, buffer: false) do |file|
-						ObjectSpace.dump_all(output: file)
+						ObjectSpace.dump_all(output: file, shapes: shapes)
 					end
 				end
 				
@@ -118,4 +119,3 @@ module Async
 		end
 	end
 end
-

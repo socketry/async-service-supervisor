@@ -57,42 +57,115 @@ A full heap dump calls `ObjectSpace.dump_all`. Before running it in production, 
 
 ## Analyzing Heap Dumps
 
-Capture a baseline, exercise the suspected workload, then capture the same worker again:
+Different tools answer different questions about a heap dump:
+
+| Tool | Best for | Snapshots |
+| --- | --- | --- |
+| [`heap-profiler`](https://github.com/Shopify/heap-profiler) | Aggregate memory and object counts by class, gem, file, and location | One |
+| [`sheap`](https://github.com/jhawthorn/sheap) | Finding objects retained across snapshots and tracing paths back to roots | Two or three |
+| [Reap](https://github.com/oxidize-rb/reap) | Finding objects that dominate and retain large portions of a heap | One |
+
+Install and run these tools on a trusted analysis system after retrieving the dumps from the worker. The dumps can contain sensitive application data.
+
+### Aggregate Reports with `heap-profiler`
+
+Capture a heap dump and pass it directly to `heap-profiler`:
 
 ```bash
 $ bake async:service:supervisor:memory_dump \
     connection_id=1 \
-    path=/var/tmp/worker-1-before.json
+    path=/var/tmp/worker-1.json
 
-# Run representative traffic or wait through the suspected growth period.
-
-$ bake async:service:supervisor:memory_dump \
-    connection_id=1 \
-    path=/var/tmp/worker-1-after.json
-```
-
-Use [Shopify's `heap-profiler`](https://github.com/Shopify/heap-profiler) to turn each heap dump into a report. It reads `ObjectSpace.dump_all` output directly and summarizes memory and object counts by class, gem, file, and allocation location. Install it on the system where you will analyze the dumps; it does not need to be installed in the worker:
-
-```bash
 $ gem install heap-profiler
-$ heap-profiler /var/tmp/worker-1-before.json
-$ heap-profiler /var/tmp/worker-1-after.json
+$ heap-profiler /var/tmp/worker-1.json
 ```
 
 Use `--max` to show more entries when the default report is too short:
 
 ```bash
-$ heap-profiler --max=100 /var/tmp/worker-1-after.json
+$ heap-profiler --max=100 /var/tmp/worker-1.json
 ```
 
-Compare the reports for classes, locations, or repeated strings whose object count and memory continue to increase. In particular, look for:
+The report is a useful overview of the largest classes, strings, and allocation locations in one snapshot. It does not calculate a delta between arbitrary Bake snapshots. Capture reports at comparable points in the workload if you want to compare their aggregate counts manually.
+
+### Retention Diffs with `sheap`
+
+Capture a baseline and two later snapshots from the same worker. The third snapshot distinguishes objects that remain retained from temporary allocations present only in the second dump:
+
+```bash
+$ bake async:service:supervisor:memory_dump connection_id=1 path=/var/tmp/worker-1-before.json
+
+# Run representative traffic or wait through the suspected growth period.
+$ bake async:service:supervisor:memory_dump connection_id=1 path=/var/tmp/worker-1-after.json
+
+# Run another comparable workload and GC cycle.
+$ bake async:service:supervisor:memory_dump connection_id=1 path=/var/tmp/worker-1-later.json
+```
+
+Install `sheap` and open an interactive two-snapshot diff:
+
+```bash
+$ gem install sheap
+$ sheap /var/tmp/worker-1-before.json /var/tmp/worker-1-after.json
+```
+
+The command opens IRB with `$before`, `$after`, and `$diff` available. For example:
+
+```ruby
+# Count newly retained objects by Ruby heap type:
+$diff.retained.map(&:type_str).tally.sort_by(&:last).last(20)
+
+# Inspect a large retained collection and find its path from a heap root:
+large_array = $diff.retained.arrays.max_by(&:length)
+$after.find_path(large_array)
+```
+
+Use the library API for a three-snapshot diff:
+
+```ruby
+three_way = Sheap::Diff.new(
+	"/var/tmp/worker-1-before.json",
+	"/var/tmp/worker-1-after.json",
+	"/var/tmp/worker-1-later.json"
+)
+
+three_way.retained.map(&:type_str).tally.sort_by(&:last).last(20)
+```
+
+`sheap` identifies objects by heap address and type. Heap compaction can move objects, while freed addresses can be reused, so disable automatic compaction during the investigation and prefer a three-snapshot diff. Always compare dumps from the same live worker.
+
+Look for:
 
 - Collection classes whose object count or shallow memory continually grows.
 - Repeated strings or payloads that should have expired.
-- Application classes associated with registries, caches, queues, or other long-lived state.
-- Growth that remains across multiple snapshots captured after comparable GC activity.
+- Paths from roots through registries, caches, queues, or other long-lived state.
+- Objects that remain in the three-snapshot diff after comparable GC activity.
 
-The reported memory is shallow size and does not include every object referenced by a container. Treat a two-snapshot increase as evidence of growth, not necessarily a leak. Capture a third snapshot after another comparable workload and GC cycle to confirm that the same classes or allocation locations continue growing.
+### Dominator Analysis with Reap
+
+Reap builds a dominator tree from a single heap's reference graph. An object dominates another object when every path from a heap root to the second object passes through the first. This makes Reap useful for finding a small cache, queue, thread, or registry that keeps a much larger object graph alive.
+
+Reap does not currently accept Ruby's address-less `SHAPE` records. Disable them when capturing a dump for Reap:
+
+```bash
+$ bake async:service:supervisor:memory_dump \
+    connection_id=1 \
+    path=/var/tmp/worker-1-reap.json \
+    shapes=false
+```
+
+Install Reap with Cargo, then print the largest dominators and optionally generate an inverted flame graph:
+
+```bash
+$ cargo install reap
+$ reap /var/tmp/worker-1-reap.json \
+    --count 20 \
+    --flamegraph /var/tmp/worker-1-retained.svg
+```
+
+The report separates an object's shallow size from the total memory it dominates. Use `--root ADDRESS` to repeat the analysis for a suspicious subtree, or `--dot FILE` to write its dominator graph. Dumps captured with `shapes=false` remain compatible with `heap-profiler` and `sheap`.
+
+Reap does not compare snapshots or use allocation generations. Combine it with a `sheap` diff when you need both evidence of continued retention and the aggregate size of the retained graph.
 
 ## Recording Allocation Locations
 
@@ -155,12 +228,13 @@ Look for fibers or threads that remain in every snapshot, queues that never drai
 
 1. Confirm sustained growth with the `MemoryMonitor`, `ProcessMonitor`, or external process metrics.
 2. List worker connection IDs and select one representative worker.
-3. Capture a baseline heap dump after normal warm-up.
-4. Start GC profiling.
-5. Run representative traffic or wait through the suspected leak interval.
+3. Enable allocation tracing before the workload if its overhead is acceptable.
+4. Capture a baseline heap dump after normal warm-up, using `shapes=false` if you plan to use Reap.
+5. Start GC profiling and run representative traffic or wait through the suspected leak interval.
 6. Capture scheduler and thread dumps if work appears stuck or backlogged.
-7. Stop GC profiling and capture a second heap dump from the same worker.
-8. Compare heap types, allocation locations when tracing is enabled, and retained reference paths.
-9. Repeat across another workload interval to distinguish sustained retention from normal cache warm-up.
+7. Stop GC profiling and capture the second heap dump from the same worker.
+8. Repeat the workload and capture a third dump for a stronger `sheap` retention signal.
+9. Use `heap-profiler` for aggregate counts, `sheap` for retained objects and root paths, and Reap for dominator sizes.
+10. Repeat the experiment if necessary to distinguish sustained retention from normal cache warm-up.
 
 Use the {ruby Async::Service::Supervisor::MemoryMonitor} to protect production from unbounded growth, but complete diagnostics before its configured limit restarts the worker. A restarted worker receives a new connection ID and loses the heap state you were observing.

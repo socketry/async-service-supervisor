@@ -44,9 +44,10 @@ end
 #
 # @parameter connection_id [Integer] The connection ID of the worker to target.
 # @parameter path [String] The file path where the worker should write the dump.
-def memory_dump(connection_id:, path:)
+# @parameter shapes [Boolean] Whether to include Ruby shape-tree records.
+def memory_dump(connection_id:, path:, shapes: true)
 	with_worker(connection_id) do |worker|
-		worker.memory_dump(path: path)
+		worker.memory_dump(path: path, shapes: shapes)
 	end
 end
 

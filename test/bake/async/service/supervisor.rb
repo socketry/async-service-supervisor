@@ -29,10 +29,11 @@ describe "async:service:supervisor" do
 	
 	it "dumps memory" do
 		path = File.join(@root, "memory.json")
-		result = invoke("memory_dump", connection_id: connection_id, path: path)
+		result = invoke("memory_dump", connection_id: connection_id, path: path, shapes: false)
 		
 		expect(result).to be == {path: path}
 		expect(File.size(path)).to be > 0
+		expect(File.read(path)).not.to be(:include?, '"type":"SHAPE"')
 	end
 	
 	it "dumps the scheduler" do
