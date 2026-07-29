@@ -7,8 +7,11 @@ migration:
 memory-monitor:
   order: 3
 
-process-monitor:
+memory-diagnostics:
   order: 4
 
-utilization-monitor:
+process-monitor:
   order: 5
+
+utilization-monitor:
+  order: 6

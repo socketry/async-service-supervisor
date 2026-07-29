@@ -1,0 +1,90 @@
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2026, by Samuel Williams.
+
+require "bake/context"
+require "async/service/supervisor/a_simple_service"
+
+describe "async:service:supervisor" do
+	include_context Async::Service::Supervisor::ASimpleService
+	
+	let(:context) {@@context ||= Bake::Context.load}
+	
+	def invoke(name, **options)
+		recipe = context.lookup("async:service:supervisor:#{name}")
+		result = nil
+		
+		mock(recipe.instance) do |mock|
+			mock.replace(:endpoint){endpoint}
+			result = recipe.call(**options)
+		end
+		
+		result
+	end
+	
+	it "lists the workers" do
+		expect(invoke("workers")).to be == [connection_id]
+	end
+	
+	it "dumps memory" do
+		path = File.join(@root, "memory.json")
+		result = invoke("memory_dump", connection_id: connection_id, path: path, shapes: false)
+		
+		expect(result).to be == {path: path}
+		expect(File.size(path)).to be > 0
+		expect(File.read(path)).not.to be(:include?, '"type":"SHAPE"')
+	end
+	
+	it "traces allocations and dumps memory" do
+		path = File.join(@root, "allocations.json")
+		
+		expect(invoke("allocation_trace_start", connection_id: connection_id)).to be == {started: true}
+		object = Object.new
+		expect(ObjectSpace.allocation_sourcefile(object)).to be_truthy
+		
+		result = invoke("allocation_trace_stop", connection_id: connection_id, path: path, shapes: false)
+		
+		expect(result).to be == {path: path}
+		expect(File.size(path)).to be > 0
+		expect(File.read(path)).to be(:include?, '"file":')
+		expect(ObjectSpace.allocation_sourcefile(object)).to be_nil
+	ensure
+		ObjectSpace.trace_object_allocations_stop
+		ObjectSpace.trace_object_allocations_clear
+	end
+	
+	it "dumps the scheduler" do
+		path = File.join(@root, "scheduler.txt")
+		result = invoke("scheduler_dump", connection_id: connection_id, path: path)
+		
+		expect(result).to be == {path: path}
+		expect(File.size(path)).to be > 0
+	end
+	
+	it "dumps the threads" do
+		path = File.join(@root, "threads.txt")
+		result = invoke("thread_dump", connection_id: connection_id, path: path)
+		
+		expect(result).to be == {path: path}
+		expect(File.size(path)).to be > 0
+	end
+	
+	it "starts garbage collection profiling" do
+		result = invoke("garbage_profile_start", connection_id: connection_id)
+		
+		expect(result).to be == {started: true}
+		expect(GC::Profiler.enabled?).to be == true
+	end
+	
+	it "stops garbage collection profiling" do
+		path = File.join(@root, "gc.txt")
+		
+		invoke("garbage_profile_start", connection_id: connection_id)
+		result = invoke("garbage_profile_stop", connection_id: connection_id, path: path)
+		
+		expect(result).to be == {path: path}
+		expect(File).to be(:exist?, path)
+		expect(GC::Profiler.enabled?).to be == false
+	end
+end

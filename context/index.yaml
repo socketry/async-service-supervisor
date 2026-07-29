@@ -19,6 +19,10 @@ files:
   title: Memory Monitor
   description: This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::MemoryMonitor</code>
     to detect and restart workers that exceed memory limits or develop memory leaks.
+- path: memory-diagnostics.md
+  title: Memory Diagnostics
+  description: This guide explains how to capture Ruby heap dumps and garbage collection
+    profiles from supervised workers, then use them to investigate memory growth.
 - path: process-monitor.md
   title: Process Monitor
   description: This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::ProcessMonitor</code>

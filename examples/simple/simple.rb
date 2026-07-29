@@ -39,6 +39,7 @@ end
 service "sleep" do
 	service_class SleepService
 	
+	include Async::Service::Managed::Environment
 	include Async::Service::Supervisor::Supervised
 end
 

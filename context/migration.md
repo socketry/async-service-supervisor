@@ -223,7 +223,7 @@ $ bake async:service:supervisor:reload
 $ bake async:service:supervisor:status
 ```
 
-**Note:** The `memory_sample` bake task has been removed in `async-service-supervisor`. This functionality was removed as it wasn't very useful and added complexity. If you were using memory sampling, you'll need to find alternative approaches for memory leak detection, such as using the `MemoryMonitor` with appropriate limits or external memory profiling tools.
+**Note:** The `memory_sample` Bake task has been removed in `async-service-supervisor`. Use the `MemoryMonitor` to detect sustained growth and the worker diagnostic Bake tasks to capture heap dumps and GC profiles. See the [Memory Diagnostics](../memory-diagnostics/index) guide for the recommended workflow.
 
 ### 8. Update Programmatic Client Usage
 

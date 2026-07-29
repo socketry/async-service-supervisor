@@ -21,7 +21,7 @@ module Async
 				
 				attr :registrations
 				
-				def run
+				def run(parent: nil)
 				end
 				
 				def status
@@ -87,4 +87,3 @@ module Async
 		end
 	end
 end
-
