@@ -32,6 +32,26 @@ def status
 	end
 end
 
+# List the connection IDs of all registered workers.
+def workers
+	client do |connection|
+		supervisor = connection[:supervisor]
+		supervisor.keys
+	end
+end
+
+# Dump the object space of a worker to a file on the worker's filesystem.
+#
+# @parameter connection_id [Integer] The connection ID of the worker to target.
+# @parameter path [String] The file path where the worker should write the dump.
+def memory_dump(connection_id:, path:)
+	client do |connection|
+		supervisor = connection[:supervisor]
+		worker = supervisor[connection_id]
+		worker.memory_dump(path: path)
+	end
+end
+
 private
 
 def endpoint
