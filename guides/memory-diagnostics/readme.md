@@ -55,7 +55,7 @@ A full heap dump calls `ObjectSpace.dump_all`. Before running it in production, 
 - Avoid capturing every worker at once. Start with one representative worker during a low-risk period.
 - The dump includes objects present at that instant, including garbage that Ruby has not collected yet. For retained-growth comparisons, capture snapshots shortly after comparable GC activity when possible.
 
-## Comparing Snapshots
+## Analyzing Heap Dumps
 
 Capture a baseline, exercise the suspected workload, then capture the same worker again:
 
@@ -71,36 +71,28 @@ $ bake async:service:supervisor:memory_dump \
     path=/var/tmp/worker-1-after.json
 ```
 
-Start by summarizing object counts and shallow memory size by Ruby heap type. The following shell function processes the dump as a stream, so `jq` does not need to load the entire heap into memory:
+Use [Shopify's `heap-profiler`](https://github.com/Shopify/heap-profiler) to turn each heap dump into a report. It reads `ObjectSpace.dump_all` output directly and summarizes memory and object counts by class, gem, file, and allocation location. Install it on the system where you will analyze the dumps; it does not need to be installed in the worker:
 
 ```bash
-summarize_heap() {
-    jq -r 'select(.type != null) | [.type, (.memsize // 0)] | @tsv' "$1" |
-        awk -F '\t' '
-            {count[$1] += 1; bytes[$1] += $2}
-            END {
-                for (type in count)
-                    printf "%s\t%d\t%d\n", type, count[type], bytes[type]
-            }
-        ' |
-        sort
-}
-
-summarize_heap /var/tmp/worker-1-before.json > before.types
-summarize_heap /var/tmp/worker-1-after.json > after.types
-diff -u before.types after.types
+$ gem install heap-profiler
+$ heap-profiler /var/tmp/worker-1-before.json
+$ heap-profiler /var/tmp/worker-1-after.json
 ```
 
-The columns are heap type, object count, and total shallow `memsize`. Large increases in types such as `STRING`, `ARRAY`, `HASH`, `OBJECT`, or `DATA` provide a direction for deeper analysis. The `class` field is an address; heap-analysis tools resolve it through the corresponding `CLASS` record to recover the Ruby class name. Shallow size does not include all objects referenced by a container, so counts and reference graphs matter as much as byte totals.
+Use `--max` to show more entries when the default report is too short:
 
-Heap records contain addresses and `references` arrays that heap-analysis tools can use to build an object graph. When investigating retention, look for:
+```bash
+$ heap-profiler --max=100 /var/tmp/worker-1-after.json
+```
 
-- Collections whose referenced object count continually grows.
+Compare the reports for classes, locations, or repeated strings whose object count and memory continue to increase. In particular, look for:
+
+- Collection classes whose object count or shallow memory continually grows.
 - Repeated strings or payloads that should have expired.
-- Objects reachable from long-lived roots, class variables, registries, caches, or queues.
+- Application classes associated with registries, caches, queues, or other long-lived state.
 - Growth that remains across multiple snapshots captured after comparable GC activity.
 
-A two-snapshot difference is evidence of growth, not necessarily a leak. Confirm that the same classes continue growing across several workload and GC cycles.
+The reported memory is shallow size and does not include every object referenced by a container. Treat a two-snapshot increase as evidence of growth, not necessarily a leak. Capture a third snapshot after another comparable workload and GC cycle to confirm that the same classes or allocation locations continue growing.
 
 ## Recording Allocation Locations
 
@@ -111,26 +103,9 @@ require "objspace"
 ObjectSpace.trace_object_allocations_start
 ```
 
-Allocation tracing adds runtime and memory overhead, so enable it selectively and measure its impact before using it in production. When tracing is enabled, heap records can include `file`, `line`, `method`, and allocation generation fields.
+Allocation tracing adds runtime and memory overhead, so enable it selectively and measure its impact before using it in production. When tracing is enabled, heap records can include `file`, `line`, `method`, and allocation generation fields. `heap-profiler` automatically includes breakdowns by gem, file, and location when this information is present.
 
-Summarize traced allocation locations with:
-
-```bash
-$ jq -r \
-    'select(.file != null) | [.file, (.line // 0), (.memsize // 0)] | @tsv' \
-    /var/tmp/worker-1-after.json |
-    awk -F '\t' '
-        {location = $1 ":" $2; count[location] += 1; bytes[location] += $3}
-        END {
-            for (location in count)
-                printf "%12d %12d %s\n", count[location], bytes[location], location
-        }
-    ' |
-    sort -nr |
-    head -50
-```
-
-High allocation counts identify hot allocation sites. Compare snapshots and focus on locations whose objects remain present and continue accumulating, rather than sites that merely allocate many short-lived objects.
+High allocation counts identify hot allocation sites. Compare the `heap-profiler` reports and focus on locations whose objects remain present and continue accumulating, rather than sites that merely allocate many short-lived objects.
 
 ## Profiling Garbage Collection
 
