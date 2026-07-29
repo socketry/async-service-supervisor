@@ -4,8 +4,11 @@
 # Copyright, 2026, by Samuel Williams.
 
 require "bake/context"
+require "sus/fixtures/temporary_directory_context"
 
 describe "async:service:supervisor" do
+	include Sus::Fixtures::TemporaryDirectoryContext
+	
 	let(:context) {@@context ||= Bake::Context.load}
 	let(:supervisor) {Object.new}
 	let(:worker) {Object.new}
@@ -53,36 +56,42 @@ describe "async:service:supervisor" do
 	end
 	
 	it "dumps memory" do
+		expected_path = File.join(root, "memory.json")
+		
 		mock(worker) do |mock|
 			mock.replace(:memory_dump) do |path:|
-				expect(path).to be == "/tmp/memory.json"
+				expect(path).to be == expected_path
 				result
 			end
 			
-			expect(invoke_worker("memory_dump", path: "/tmp/memory.json")).to be == result
+			expect(invoke_worker("memory_dump", path: expected_path)).to be == result
 		end
 	end
 	
 	it "dumps the scheduler" do
+		expected_path = File.join(root, "scheduler.txt")
+		
 		mock(worker) do |mock|
 			mock.replace(:scheduler_dump) do |path:, log:|
-				expect(path).to be == "/tmp/scheduler.txt"
+				expect(path).to be == expected_path
 				expect(log).to be == "Scheduler dump"
 				result
 			end
 			
-			expect(invoke_worker("scheduler_dump", path: "/tmp/scheduler.txt", log: "Scheduler dump")).to be == result
+			expect(invoke_worker("scheduler_dump", path: expected_path, log: "Scheduler dump")).to be == result
 		end
 	end
 	
 	it "dumps the threads" do
+		expected_path = File.join(root, "threads.txt")
+		
 		mock(worker) do |mock|
 			mock.replace(:thread_dump) do |path:|
-				expect(path).to be == "/tmp/threads.txt"
+				expect(path).to be == expected_path
 				result
 			end
 			
-			expect(invoke_worker("thread_dump", path: "/tmp/threads.txt")).to be == result
+			expect(invoke_worker("thread_dump", path: expected_path)).to be == result
 		end
 	end
 	
@@ -95,13 +104,15 @@ describe "async:service:supervisor" do
 	end
 	
 	it "stops garbage collection profiling" do
+		expected_path = File.join(root, "gc.txt")
+		
 		mock(worker) do |mock|
 			mock.replace(:garbage_profile_stop) do |path:|
-				expect(path).to be == "/tmp/gc.txt"
+				expect(path).to be == expected_path
 				result
 			end
 			
-			expect(invoke_worker("garbage_profile_stop", path: "/tmp/gc.txt")).to be == result
+			expect(invoke_worker("garbage_profile_stop", path: expected_path)).to be == result
 		end
 	end
 end
