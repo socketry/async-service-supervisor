@@ -7,36 +7,48 @@ require "bake/context"
 
 describe "async:service:supervisor" do
 	let(:context) {@@context ||= Bake::Context.load}
+	let(:supervisor) {Object.new}
 	let(:worker) {Object.new}
 	let(:result) {Object.new}
+	let(:connection) do
+		{supervisor: supervisor}
+	end
 	
-	def invoke(name, connection_id: 7, **options)
+	def invoke(name, **options)
 		recipe = context.lookup("async:service:supervisor:#{name}")
+		result = nil
 		
 		mock(recipe.instance) do |mock|
-			mock.replace(:with_worker) do |id, &block|
-				expect(id).to be == connection_id
-				block.call(worker)
+			mock.replace(:client) do |&block|
+				block.call(connection)
 			end
 			
-			return recipe.call(connection_id: connection_id, **options)
+			result = recipe.call(**options)
 		end
+		
+		result
+	end
+	
+	def invoke_worker(name, connection_id: 7, **options)
+		result = nil
+		
+		mock(supervisor) do |mock|
+			mock.replace(:[]) do |id|
+				expect(id).to be == connection_id
+				worker
+			end
+			
+			result = invoke(name, connection_id: connection_id, **options)
+		end
+		
+		result
 	end
 	
 	it "lists the workers" do
-		recipe = context.lookup("async:service:supervisor:workers")
-		supervisor = Object.new
-		connection = Object.new
-		supervisor.define_singleton_method(:keys) {[1, 2, 3]}
-		connection.define_singleton_method(:[]) do |name|
-			raise ArgumentError, "Unexpected controller: #{name.inspect}" unless name == :supervisor
-			supervisor
-		end
-		
-		mock(recipe.instance) do |mock|
-			mock.replace(:client) {|&block| block.call(connection)}
+		mock(supervisor) do |mock|
+			mock.replace(:keys){[1, 2, 3]}
 			
-			expect(recipe.call).to be == [1, 2, 3]
+			expect(invoke("workers")).to be == [1, 2, 3]
 		end
 	end
 	
@@ -47,7 +59,7 @@ describe "async:service:supervisor" do
 				result
 			end
 			
-			expect(invoke("memory_dump", path: "/tmp/memory.json")).to be == result
+			expect(invoke_worker("memory_dump", path: "/tmp/memory.json")).to be == result
 		end
 	end
 	
@@ -59,7 +71,7 @@ describe "async:service:supervisor" do
 				result
 			end
 			
-			expect(invoke("scheduler_dump", path: "/tmp/scheduler.txt", log: "Scheduler dump")).to be == result
+			expect(invoke_worker("scheduler_dump", path: "/tmp/scheduler.txt", log: "Scheduler dump")).to be == result
 		end
 	end
 	
@@ -70,15 +82,15 @@ describe "async:service:supervisor" do
 				result
 			end
 			
-			expect(invoke("thread_dump", path: "/tmp/threads.txt")).to be == result
+			expect(invoke_worker("thread_dump", path: "/tmp/threads.txt")).to be == result
 		end
 	end
 	
 	it "starts garbage collection profiling" do
 		mock(worker) do |mock|
-			mock.replace(:garbage_profile_start) {result}
+			mock.replace(:garbage_profile_start){result}
 			
-			expect(invoke("garbage_profile_start")).to be == result
+			expect(invoke_worker("garbage_profile_start")).to be == result
 		end
 	end
 	
@@ -89,7 +101,7 @@ describe "async:service:supervisor" do
 				result
 			end
 			
-			expect(invoke("garbage_profile_stop", path: "/tmp/gc.txt")).to be == result
+			expect(invoke_worker("garbage_profile_stop", path: "/tmp/gc.txt")).to be == result
 		end
 	end
 end
