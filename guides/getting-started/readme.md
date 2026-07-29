@@ -149,44 +149,28 @@ end
 The supervisor can collect various diagnostics from workers on demand:
 
 - **Memory dumps**: Full heap dumps for memory analysis via `ObjectSpace.dump_all`.
-- **Memory samples**: Lightweight sampling to identify memory leaks.
 - **Thread dumps**: Stack traces of all threads.
-- **Scheduler dumps**: Async fiber hierarchy
-- **Garbage collection profiles**: GC performance data
+- **Scheduler dumps**: Async fiber hierarchy.
+- **Garbage collection profiles**: GC performance data.
 
-These can be triggered programmatically or via command-line tools (when available).
+These can be triggered programmatically or with Bake tasks.
 
 #### Memory Leak Diagnosis
 
-To identify memory leaks, you can use the memory sampling feature which is much lighter weight than a full memory dump. It tracks allocations over a time period and focuses on retained objects.
-
-**Using the bake task:**
+Start by listing the workers registered with the supervisor:
 
 ```bash
-# Sample for 30 seconds and print report to console
-$ bake async:container:supervisor:memory_sample duration=30
+$ bake async:service:supervisor:workers
 ```
 
-**Programmatically:**
+Then capture heap dumps from the same worker before and after the suspected growth period:
 
-```ruby
-# Assuming you have a connection to a worker:
-result = connection.call(do: :memory_sample, duration: 30)
-puts result[:data]
+```bash
+$ bake async:service:supervisor:memory_dump connection_id=1 path=/var/tmp/worker-before.json
+$ bake async:service:supervisor:memory_dump connection_id=1 path=/var/tmp/worker-after.json
 ```
 
-This will sample memory allocations for the specified duration, then force a garbage collection and return a JSON report showing what objects were allocated during that period and retained after GC. Late-lifecycle allocations that are retained are likely memory leaks.
-
-The JSON report includes:
-- `total_allocated`: Total allocated memory and count
-- `total_retained`: Total retained memory and count  
-- `by_gem`: Breakdown by gem/library
-- `by_file`: Breakdown by source file
-- `by_location`: Breakdown by specific file:line locations
-- `by_class`: Breakdown by object class
-- `strings`: String allocation analysis
-
-This is much more efficient than `do: :memory_dump` which uses `ObjectSpace.dump_all` and can be slow and blocking on large heaps. The JSON format also makes it easy to integrate with monitoring and analysis tools.
+Heap dumps are heavyweight and may contain sensitive application data. See the [Memory Diagnostics](../memory-diagnostics/index) guide for the complete capture, comparison, and GC profiling workflow.
 
 ## Advanced Usage
 

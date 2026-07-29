@@ -20,6 +20,8 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
   - [Memory Monitor](https://socketry.github.io/async-service-supervisor/guides/memory-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::MemoryMonitor</code> to detect and restart workers that exceed memory limits or develop memory leaks.
 
+  - [Memory Diagnostics](https://socketry.github.io/async-service-supervisor/guides/memory-diagnostics/index) - This guide explains how to capture Ruby heap dumps and garbage collection profiles from supervised workers, then use them to investigate memory growth.
+
   - [Process Monitor](https://socketry.github.io/async-service-supervisor/guides/process-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::ProcessMonitor</code> to log CPU and memory metrics for your worker processes.
 
   - [Utilization Monitor](https://socketry.github.io/async-service-supervisor/guides/utilization-monitor/index) - This guide explains how to use the <code class="language-ruby">Async::Service::Supervisor::UtilizationMonitor</code> to collect and aggregate application-level utilization metrics from your worker processes.
