@@ -66,6 +66,40 @@ module Async
 					end
 				end
 				
+				# Start recording object allocation metadata.
+				#
+				# Allocation tracing is process-global and can add significant overhead.
+				def allocation_trace_start
+					require "objspace"
+					
+					raise "Object allocation tracing was already started by this controller!" if @allocation_trace_active
+					raise "Object allocation tracing is already active!" if ObjectSpace.allocation_sourcefile(Object.new)
+					
+					ObjectSpace.trace_object_allocations_start
+					@allocation_trace_active = true
+					
+					return {started: true}
+				end
+				
+				# Stop recording allocations, dump the traced heap, and clear the metadata.
+				#
+				# @parameter path [String] File path where the heap dump should be written.
+				# @parameter shapes [Boolean] Whether to include Ruby shape-tree records.
+				def allocation_trace_stop(path:, shapes: true)
+					require "objspace"
+					stopped = false
+					
+					raise "Object allocation tracing was not started by this controller!" unless @allocation_trace_active
+					
+					ObjectSpace.trace_object_allocations_stop
+					stopped = true
+					@allocation_trace_active = false
+					
+					memory_dump(path: path, shapes: shapes)
+				ensure
+					ObjectSpace.trace_object_allocations_clear if stopped
+				end
+				
 				# Dump information about all running threads.
 				#
 				# Includes thread inspection and backtraces for debugging.

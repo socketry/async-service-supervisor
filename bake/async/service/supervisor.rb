@@ -51,6 +51,26 @@ def memory_dump(connection_id:, path:, shapes: true)
 	end
 end
 
+# Start recording object allocation metadata in a worker.
+#
+# @parameter connection_id [Integer] The connection ID of the worker to target.
+def allocation_trace_start(connection_id:)
+	with_worker(connection_id) do |worker|
+		worker.allocation_trace_start
+	end
+end
+
+# Stop recording object allocations, dump the traced heap, and clear the metadata.
+#
+# @parameter connection_id [Integer] The connection ID of the worker to target.
+# @parameter path [String] The file path where the worker should write the dump.
+# @parameter shapes [Boolean] Whether to include Ruby shape-tree records.
+def allocation_trace_stop(connection_id:, path:, shapes: true)
+	with_worker(connection_id) do |worker|
+		worker.allocation_trace_stop(path: path, shapes: shapes)
+	end
+end
+
 # Dump the fiber scheduler hierarchy of a worker.
 #
 # @parameter connection_id [Integer] The connection ID of the worker to target.

@@ -169,14 +169,23 @@ Reap does not compare snapshots or use allocation generations. Combine it with a
 
 ## Recording Allocation Locations
 
-By default, a heap dump may not contain allocation source locations. To record them, enable ObjectSpace allocation tracing in the worker before the workload you want to investigate:
+By default, a heap dump may not contain allocation source locations. Start tracing on the selected worker before the workload you want to investigate:
 
-```ruby
-require "objspace"
-ObjectSpace.trace_object_allocations_start
+```bash
+$ bake async:service:supervisor:allocation_trace_start connection_id=1
 ```
 
-Allocation tracing adds runtime and memory overhead, so enable it selectively and measure its impact before using it in production. When tracing is enabled, heap records can include `file`, `line`, `method`, and allocation generation fields. `heap-profiler` automatically includes breakdowns by gem, file, and location when this information is present.
+Exercise the workload, then stop tracing and write the heap dump:
+
+```bash
+$ bake async:service:supervisor:allocation_trace_stop \
+    connection_id=1 \
+    path=/var/tmp/worker-1-traced.json
+```
+
+The stop operation disables tracing before dumping the heap, then clears the allocation metadata after the dump is complete. Start and stop must target the same live connection ID. Use `shapes=false` with the stop task when the dump will be analyzed by Reap.
+
+Allocation tracing is process-global and adds runtime and memory overhead, so enable it selectively and measure its impact before using it in production. The start task refuses to run if tracing is already active, avoiding interference with another profiler. While tracing is enabled, heap records can include `file`, `line`, `method`, and allocation generation fields. `heap-profiler` automatically includes breakdowns by gem, file, and location when this information is present.
 
 High allocation counts identify hot allocation sites. Compare the `heap-profiler` reports and focus on locations whose objects remain present and continue accumulating, rather than sites that merely allocate many short-lived objects.
 

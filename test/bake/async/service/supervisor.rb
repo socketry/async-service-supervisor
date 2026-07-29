@@ -36,6 +36,24 @@ describe "async:service:supervisor" do
 		expect(File.read(path)).not.to be(:include?, '"type":"SHAPE"')
 	end
 	
+	it "traces allocations and dumps memory" do
+		path = File.join(@root, "allocations.json")
+		
+		expect(invoke("allocation_trace_start", connection_id: connection_id)).to be == {started: true}
+		object = Object.new
+		expect(ObjectSpace.allocation_sourcefile(object)).to be_truthy
+		
+		result = invoke("allocation_trace_stop", connection_id: connection_id, path: path, shapes: false)
+		
+		expect(result).to be == {path: path}
+		expect(File.size(path)).to be > 0
+		expect(File.read(path)).to be(:include?, '"file":')
+		expect(ObjectSpace.allocation_sourcefile(object)).to be_nil
+	ensure
+		ObjectSpace.trace_object_allocations_stop
+		ObjectSpace.trace_object_allocations_clear
+	end
+	
 	it "dumps the scheduler" do
 		path = File.join(@root, "scheduler.txt")
 		result = invoke("scheduler_dump", connection_id: connection_id, path: path)
