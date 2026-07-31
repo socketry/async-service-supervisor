@@ -281,35 +281,48 @@ module Async
 				#
 				# @returns [Hash] Hash mapping service names to aggregated utilization metrics.
 				def sample
-					@guard.synchronize do
-						aggregated = {}
+					aggregated = {}
+					
+					sample_by_worker.each_value do |worker|
+						service_name = worker[:state][:name] || "unknown"
 						
-						@workers.each do |worker_id, supervisor_controller|
-							service_name = supervisor_controller.state[:name] || "unknown"
-							
-							data = @allocator.read(worker_id)
-							next unless data
-							
-							# Initialize service aggregation if needed
-							aggregated[service_name] ||= {}
-							
-							# Sum up all numeric fields
-							data.each do |key, value|
-								if value.is_a?(Numeric)
-									aggregated[service_name][key] ||= 0
-									aggregated[service_name][key] += value
-								else
-									# For non-numeric values, we could handle differently
-									# For now, just store the last value
-									aggregated[service_name][key] = value
-								end
+						data = worker[:utilization]
+						
+						# Initialize service aggregation if needed
+						aggregated[service_name] ||= {}
+						
+						# Sum up all numeric fields
+						data.each do |key, value|
+							if value.is_a?(Numeric)
+								aggregated[service_name][key] ||= 0
+								aggregated[service_name][key] += value
+							else
+								# For non-numeric values, we could handle differently
+								# For now, just store the last value
+								aggregated[service_name][key] = value
 							end
-							
-							# Count workers per service (for utilization denominator)
-							aggregated[service_name][:worker_count] = (aggregated[service_name][:worker_count] || 0) + 1
 						end
 						
-						aggregated
+						# Count workers per service (for utilization denominator)
+						aggregated[service_name][:worker_count] = (aggregated[service_name][:worker_count] || 0) + 1
+					end
+					
+					aggregated
+				end
+				
+				# Sample utilization data for each registered worker.
+				#
+				# @returns [Hash] An immutable hash keyed by worker ID, with supervisor state and utilization values.
+				def sample_by_worker
+					@guard.synchronize do
+						@workers.each_with_object({}) do |(worker_id, supervisor_controller), workers|
+							if utilization = @allocator.read(worker_id)
+								workers[worker_id] = {
+									state: supervisor_controller.state.dup.freeze,
+									utilization: utilization.freeze,
+								}.freeze
+							end
+						end.freeze
 					end
 				end
 				

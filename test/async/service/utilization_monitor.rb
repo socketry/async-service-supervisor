@@ -142,6 +142,26 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		)
 	end
 	
+	it "can sample utilization data by worker" do
+		monitor.register(supervisor_controller)
+		
+		worker_registry.metric(:connections_total).set(100)
+		worker_registry.metric(:connections_active).set(5)
+		
+		workers = monitor.sample_by_worker
+		
+		expect(workers).to be == {
+			1 => {
+				state: {name: "test_service"},
+				utilization: {connections_total: 100, connections_active: 5},
+			}
+		}
+		expect(workers).to be(:frozen?)
+		expect(workers[1]).to be(:frozen?)
+		expect(workers[1][:state]).to be(:frozen?)
+		expect(workers[1][:utilization]).to be(:frozen?)
+	end
+	
 	it "aggregates metrics from multiple workers" do
 		# Create second worker
 		registry2 = Async::Utilization::Registry.new
