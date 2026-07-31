@@ -148,7 +148,7 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		worker_registry.metric(:connections_total).set(100)
 		worker_registry.metric(:connections_active).set(5)
 		
-		workers = monitor.sample_workers
+		workers = monitor.sample_by_worker
 		
 		expect(workers).to be == {
 			1 => {

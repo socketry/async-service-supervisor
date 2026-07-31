@@ -283,7 +283,7 @@ module Async
 				def sample
 					aggregated = {}
 					
-					sample_workers.each_value do |worker|
+					sample_by_worker.each_value do |worker|
 						service_name = worker[:state][:name] || "unknown"
 						
 						data = worker[:utilization]
@@ -313,7 +313,7 @@ module Async
 				# Sample utilization data for each registered worker.
 				#
 				# @returns [Hash] An immutable hash keyed by worker ID, with supervisor state and utilization values.
-				def sample_workers
+				def sample_by_worker
 					@guard.synchronize do
 						@workers.each_with_object({}) do |(worker_id, supervisor_controller), workers|
 							if utilization = @allocator.read(worker_id)
