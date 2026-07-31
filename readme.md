@@ -30,6 +30,10 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
+### v0.20.0
+
+  - Add per-worker snapshots to `Async::Service::Supervisor::UtilizationMonitor`.
+
 ### v0.18.0
 
   - Allow supervised services to merge additional worker state during preparation and worker construction.
@@ -67,13 +71,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
   - Add `state` attribute to `SupervisorController` to store per-worker metadata (e.g., service name).
   - Add `state` parameter to `Worker#initialize` to allow workers to provide state during registration.
   - State is now accessible via `supervisor_controller.state` instead of `connection.state` (as it was in `Async::Container::Supervisor`).
-
-### v0.10.0
-
-  - Serialize `register`/`remove` and `check!` operations in `MemoryMonitor` to prevent race conditions.
-  - Remove `memory_sample` functionality - it wasn't very useful and added a lot of complexity.
-  - Add support for `Memory::Leak::Cluster` `free_size_minimum:` option.
-  - Remove extraneous "Memory leak detected\!" logs.
 
 ## Contributing
 

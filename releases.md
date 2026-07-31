@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.20.0
 
   - Add per-worker snapshots to `Async::Service::Supervisor::UtilizationMonitor`.
 
