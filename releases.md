@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Add per-worker snapshots to `Async::Service::Supervisor::UtilizationMonitor`.
+
 ## v0.18.0
 
   - Allow supervised services to merge additional worker state during preparation and worker construction.
