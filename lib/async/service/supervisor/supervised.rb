@@ -78,7 +78,10 @@ module Async
 				def prepare!(instance, state: nil)
 					super(instance)
 					
-					supervisor_worker(state: state).run
+					worker = supervisor_worker(state: state)
+					worker.run
+					
+					worker
 				end
 			end
 		end
