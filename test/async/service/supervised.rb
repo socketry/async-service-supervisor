@@ -57,6 +57,24 @@ describe Async::Service::Supervisor::Supervised do
 		worker_task&.stop
 	end
 	
+	it "returns the worker from prepare!" do
+		environment = Async::Service::Environment.build(root: @root) do
+			name "simple-service"
+			
+			service_class {SimpleService}
+			
+			include Async::Service::Managed::Environment
+			include Async::Service::Supervisor::Supervised
+		end
+		
+		worker = environment.evaluator.prepare!(nil)
+		expect(worker).to be_a(Async::Service::Supervisor::Worker)
+		
+		# Wait for the worker to register with the supervisor:
+		event = registration_monitor.pop
+		expect(event.supervisor_controller.process_id).to be == ::Process.pid
+	end
+	
 	it "can register explicit worker state" do
 		environment = Async::Service::Environment.build(root: @root) do
 			name "simple-service"
