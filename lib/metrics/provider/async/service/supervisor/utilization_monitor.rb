@@ -11,11 +11,11 @@ require_relative "../../../../../async/service/supervisor/utilization_monitor"
 class Async::Service::Supervisor::UtilizationMonitor
 	Metrics::Provider(self) do
 		UTILIZATION = Metrics.metric("async.utilization", :gauge, description: "Active requests per worker.")
-		UTILIZATION_CONNECTIONS_ACTIVE = Metrics.metric("async.utilization.connections.active", :gauge, description: "The number of active connections.")
-		UTILIZATION_CONNECTIONS_TOTAL = Metrics.metric("async.utilization.connections.total", :gauge, description: "The total number of connections.")
-		UTILIZATION_REQUESTS_ACTIVE = Metrics.metric("async.utilization.requests.active", :gauge, description: "The number of active requests.")
-		UTILIZATION_REQUESTS_TOTAL = Metrics.metric("async.utilization.requests.total", :gauge, description: "The total number of requests.")
-		UTILIZATION_WORKERS = Metrics.metric("async.utilization.workers", :gauge, description: "The number of workers contributing utilization metrics.")
+		UTILIZATION_CONNECTIONS_ACTIVE = Metrics.metric("async.utilization.connections_active", :gauge, description: "The number of active connections.")
+		UTILIZATION_CONNECTIONS_TOTAL = Metrics.metric("async.utilization.connections_total", :gauge, description: "The total number of connections.")
+		UTILIZATION_REQUESTS_ACTIVE = Metrics.metric("async.utilization.requests_active", :gauge, description: "The number of active requests.")
+		UTILIZATION_REQUESTS_TOTAL = Metrics.metric("async.utilization.requests_total", :gauge, description: "The total number of requests.")
+		UTILIZATION_WORKER_COUNT = Metrics.metric("async.utilization.worker_count", :gauge, description: "The number of workers contributing utilization metrics.")
 		
 		def emit(metrics)
 			metrics.each do |service_name, fields|
@@ -38,7 +38,7 @@ class Async::Service::Supervisor::UtilizationMonitor
 				end
 				
 				if worker_count = fields[:worker_count]
-					UTILIZATION_WORKERS.emit(worker_count, tags: tags)
+					UTILIZATION_WORKER_COUNT.emit(worker_count, tags: tags)
 					
 					if worker_count > 0 and requests_active = fields[:requests_active]
 						UTILIZATION.emit(requests_active.to_f / worker_count, tags: tags)
