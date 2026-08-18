@@ -17,11 +17,11 @@ describe "metrics/provider/async/service/supervisor" do
 	it "scopes metric constants to the instrumented classes" do
 		expect(Object.const_defined?(:PROCESS_METRICS_GENERAL_PROCESSOR_UTILIZATION, false)).to be == false
 		expect(Object.const_defined?(:UTILIZATION, false)).to be == false
-		expect(Object.const_defined?(:UTILIZATION_WORKERS, false)).to be == false
+		expect(Object.const_defined?(:UTILIZATION_WORKER_COUNT, false)).to be == false
 		
 		expect(Async::Service::Supervisor::ProcessMonitor.const_defined?(:PROCESS_METRICS_GENERAL_PROCESSOR_UTILIZATION, false)).to be == true
 		expect(Async::Service::Supervisor::UtilizationMonitor.const_defined?(:UTILIZATION, false)).to be == true
-		expect(Async::Service::Supervisor::UtilizationMonitor.const_defined?(:UTILIZATION_WORKERS, false)).to be == true
+		expect(Async::Service::Supervisor::UtilizationMonitor.const_defined?(:UTILIZATION_WORKER_COUNT, false)).to be == true
 	end
 	
 	it "defines process monitor metrics" do
@@ -53,10 +53,21 @@ describe "metrics/provider/async/service/supervisor" do
 	end
 	
 	it "defines utilization monitor metrics" do
-		metric = metric(Async::Service::Supervisor::UtilizationMonitor, :UTILIZATION)
+		metrics = {
+			UTILIZATION: "async.utilization",
+			UTILIZATION_CONNECTIONS_ACTIVE: "async.utilization.connections_active",
+			UTILIZATION_CONNECTIONS_TOTAL: "async.utilization.connections_total",
+			UTILIZATION_REQUESTS_ACTIVE: "async.utilization.requests_active",
+			UTILIZATION_REQUESTS_TOTAL: "async.utilization.requests_total",
+			UTILIZATION_WORKER_COUNT: "async.utilization.worker_count",
+		}
 		
-		expect(metric.name).to be == "async.utilization"
-		expect(metric.type).to be == :gauge
+		metrics.each do |constant, name|
+			metric = metric(Async::Service::Supervisor::UtilizationMonitor, constant)
+			
+			expect(metric.name).to be == name
+			expect(metric.type).to be == :gauge
+		end
 	end
 	
 	it "emits utilization monitor metrics" do
@@ -67,7 +78,7 @@ describe "metrics/provider/async/service/supervisor" do
 		expect(metric(Async::Service::Supervisor::UtilizationMonitor, :UTILIZATION_CONNECTIONS_TOTAL)).to receive(:emit).with(10, tags: tags).once
 		expect(metric(Async::Service::Supervisor::UtilizationMonitor, :UTILIZATION_REQUESTS_ACTIVE)).to receive(:emit).with(2, tags: tags).once
 		expect(metric(Async::Service::Supervisor::UtilizationMonitor, :UTILIZATION_REQUESTS_TOTAL)).to receive(:emit).with(6, tags: tags).once
-		expect(metric(Async::Service::Supervisor::UtilizationMonitor, :UTILIZATION_WORKERS)).to receive(:emit).with(2, tags: tags).once
+		expect(metric(Async::Service::Supervisor::UtilizationMonitor, :UTILIZATION_WORKER_COUNT)).to receive(:emit).with(2, tags: tags).once
 		expect(metric(Async::Service::Supervisor::UtilizationMonitor, :UTILIZATION)).to receive(:emit).with(1.0, tags: tags).once
 		
 		monitor.emit(
