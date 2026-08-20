@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-  - Use `Async::Utilization::SegmentAllocator` to manage utilization shared memory.
+  - Use `Async::Utilization::SegmentStore` to manage utilization shared memory.
 
 ## v0.20.0
 

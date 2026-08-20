@@ -14,8 +14,8 @@ module Async
 			# Uses shared memory to efficiently collect utilization metrics from workers
 			# and aggregates them by service name for monitoring and reporting.
 			class UtilizationMonitor < Monitor
-				# @deprecated Use {Async::Utilization::SegmentAllocator} instead.
-				SegmentAllocator = Async::Utilization::SegmentAllocator
+				# @deprecated Use {Async::Utilization::SegmentStore} instead.
+				SegmentAllocator = Async::Utilization::SegmentStore
 				
 				# Initialize a new utilization monitor.
 				#
@@ -28,7 +28,7 @@ module Async
 					@path = path
 					@segment_size = segment_size
 					
-					@allocator = Async::Utilization::SegmentAllocator.open(path, size: size, segment_size: segment_size, replace: true)
+					@store = Async::Utilization::SegmentStore.open(path, size: size, segment_size: segment_size, replace: true)
 					
 					# Track workers: worker_id => supervisor_controller
 					@workers = {}
@@ -49,7 +49,7 @@ module Async
 						return unless worker_id
 						
 						# Allocate a segment first (we'll get schema from worker)
-						offset = @allocator.allocate(worker_id, [])
+						offset = @store.allocate(worker_id, [])
 						
 						unless offset
 							Console.warn(self, "Failed to allocate utilization segment", worker_id: worker_id)
@@ -67,19 +67,19 @@ module Async
 								
 								# Update the allocation with the actual schema
 								if schema && !schema.empty?
-									@allocator.update_schema(worker_id, schema)
+									@store.update_schema(worker_id, schema)
 									@workers[worker_id] = supervisor_controller
 									
 									Console.info(self, "Registered worker utilization", worker_id: worker_id, offset: offset, schema: schema)
 								else
 									# Worker didn't provide schema, free the allocation
-									@allocator.free(worker_id)
+									@store.free(worker_id)
 									Console.info(self, "Worker did not provide utilization schema", worker_id: worker_id)
 								end
 							end
 						rescue => error
 							Console.error(self, "Error setting up worker utilization", worker_id: worker_id, exception: error)
-							@allocator.free(worker_id)
+							@store.free(worker_id)
 						end
 					end
 				end
@@ -95,7 +95,7 @@ module Async
 						return unless worker_id
 						
 						@workers.delete(worker_id)
-						@allocator.free(worker_id)
+						@store.free(worker_id)
 						
 						Console.debug(self, "Freed utilization segment", worker_id: worker_id)
 					end
@@ -145,7 +145,7 @@ module Async
 				def sample_by_worker
 					@guard.synchronize do
 						@workers.each_with_object({}) do |(worker_id, supervisor_controller), workers|
-							if utilization = @allocator.read(worker_id)
+							if utilization = @store.read(worker_id)
 								workers[worker_id] = {
 									state: supervisor_controller.state.dup.freeze,
 									utilization: utilization.freeze,
