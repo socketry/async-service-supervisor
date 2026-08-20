@@ -28,7 +28,7 @@ module Async
 					@path = path
 					@segment_size = segment_size
 					
-					@allocator = Async::Utilization::SegmentAllocator.new(path, size: size, segment_size: segment_size, replace: true)
+					@allocator = Async::Utilization::SegmentAllocator.open(path, size: size, segment_size: segment_size, replace: true)
 					
 					# Track workers: worker_id => supervisor_controller
 					@workers = {}
