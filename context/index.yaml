@@ -3,6 +3,8 @@
 ---
 description: A supervisor for managing multiple container processes.
 metadata:
+  bug_tracker_uri: https://github.com/socketry/async-service-supervisor/issues
+  changelog_uri: https://github.com/socketry/async-service-supervisor/blob/main/releases.md
   documentation_uri: https://socketry.github.io/async-service-supervisor/
   source_code_uri: https://github.com/socketry/async-service-supervisor.git
 files:

@@ -30,6 +30,10 @@ Please see the [project documentation](https://socketry.github.io/async-service-
 
 Please see the [project releases](https://socketry.github.io/async-service-supervisor/releases/index) for all releases.
 
+### v0.21.0
+
+  - Use `Async::Utilization::SegmentStore` to manage utilization shared memory.
+
 ### v0.20.0
 
   - Add per-worker snapshots to `Async::Service::Supervisor::UtilizationMonitor`.
@@ -65,12 +69,6 @@ Please see the [project releases](https://socketry.github.io/async-service-super
 ### v0.12.0
 
   - Introduce `UtilizationMonitor`, that uses shared memory to track worker utilization metrics, like total and active requests, connections, etc.
-
-### v0.11.0
-
-  - Add `state` attribute to `SupervisorController` to store per-worker metadata (e.g., service name).
-  - Add `state` parameter to `Worker#initialize` to allow workers to provide state during registration.
-  - State is now accessible via `supervisor_controller.state` instead of `connection.state` (as it was in `Async::Container::Supervisor`).
 
 ## Contributing
 
