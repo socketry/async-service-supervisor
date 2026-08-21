@@ -299,37 +299,6 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		expect(monitor.status[:data]).to be == {}
 	end
 	
-	it "does not resize existing file when recreating the utilization monitor" do
-		# When the supervisor restarts, it recreates the SegmentAllocator. Without unlink,
-		# File.open(path, "w+b") truncates the existing file. With unlink, we remove the file
-		# first so the new allocator gets a fresh file; any process with the old file mapped
-		# keeps a valid mapping to the unlinked inode.
-		allocator = Async::Service::Supervisor::UtilizationMonitor::SegmentAllocator.new(
-			shm_path, size: file_size, segment_size: segment_size
-		)
-		
-		# Resize to make the file larger than initial:
-		larger_size = file_size * 2
-		allocator.resize(larger_size)
-		
-		# Open the file and keep a handle; this simulates a worker that has it mapped:
-		existing_file = File.open(shm_path, "rb")
-		original_size = existing_file.size
-		expect(original_size).to be == larger_size
-		
-		allocator.close
-		
-		# Simulate supervisor restart - recreates allocator at same path:
-		Async::Service::Supervisor::UtilizationMonitor::SegmentAllocator.new(
-			shm_path, size: file_size, segment_size: segment_size
-		)
-		
-		# Our handle still references the original inode; it should not have been resized:
-		expect(existing_file.size).to be == original_size
-	ensure
-		existing_file&.close
-	end
-	
 	it "frees segments when workers are removed" do
 		# Register first worker
 		monitor.register(supervisor_controller)
@@ -390,7 +359,7 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		)
 		
 		# Verify initial size
-		expect(small_monitor.instance_variable_get(:@allocator).size).to be == initial_size
+		expect(small_monitor.store.size).to be == initial_size
 		
 		# Create workers to consume all available segments
 		# We need to register enough workers to consume all segments
@@ -442,15 +411,15 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		controller_new.define_singleton_method(:worker){worker_new}
 		
 		# Get size before registering (might trigger resize)
-		size_before = small_monitor.instance_variable_get(:@allocator).size
+		size_before = small_monitor.store.size
 		
 		# This should trigger automatic resize if free list is empty
 		small_monitor.register(controller_new)
 		
 		# Verify the file was resized if it needed to be
-		final_size = small_monitor.instance_variable_get(:@allocator).size
-		# Size should be >= initial size (might have been resized)
-		expect(final_size).to be >= initial_size
+		final_size = small_monitor.store.size
+		# Size should be >= the size before registration (might have been resized)
+		expect(final_size).to be >= size_before
 		
 		# All workers should be registered and readable
 		registry_new.metric(:connections_total).set(100)
@@ -516,7 +485,7 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		expect(status_before[:data]["test_service"][:connections_total]).to be == 42
 		
 		# Now trigger a resize: register one more worker — the free list is empty
-		# so SegmentAllocator#allocate will call resize before handing out a slot.
+		# so SegmentStore#allocate will call resize before handing out a slot.
 		resize_registry = Async::Utilization::Registry.new
 		resize_worker = Async::Service::Supervisor::Worker.new(
 			process_id: Process.pid,
@@ -530,9 +499,9 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		resize_controller.define_singleton_method(:state){{name: "filler"}}
 		resize_controller.define_singleton_method(:worker){resize_worker}
 		
-		size_before_resize = small_monitor.instance_variable_get(:@allocator).size
+		size_before_resize = small_monitor.store.size
 		small_monitor.register(resize_controller)
-		size_after_resize = small_monitor.instance_variable_get(:@allocator).size
+		size_after_resize = small_monitor.store.size
 		
 		# Confirm the resize actually happened
 		expect(size_after_resize).to be > size_before_resize

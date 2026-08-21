@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Use `Async::Utilization::SegmentStore` to manage utilization shared memory.
+
 ## v0.20.0
 
   - Add per-worker snapshots to `Async::Service::Supervisor::UtilizationMonitor`.
