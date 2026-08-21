@@ -359,7 +359,7 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		)
 		
 		# Verify initial size
-		expect(small_monitor.instance_variable_get(:@store).size).to be == initial_size
+		expect(small_monitor.store.size).to be == initial_size
 		
 		# Create workers to consume all available segments
 		# We need to register enough workers to consume all segments
@@ -411,15 +411,15 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		controller_new.define_singleton_method(:worker){worker_new}
 		
 		# Get size before registering (might trigger resize)
-		size_before = small_monitor.instance_variable_get(:@store).size
+		size_before = small_monitor.store.size
 		
 		# This should trigger automatic resize if free list is empty
 		small_monitor.register(controller_new)
 		
 		# Verify the file was resized if it needed to be
-		final_size = small_monitor.instance_variable_get(:@store).size
-		# Size should be >= initial size (might have been resized)
-		expect(final_size).to be >= initial_size
+		final_size = small_monitor.store.size
+		# Size should be >= the size before registration (might have been resized)
+		expect(final_size).to be >= size_before
 		
 		# All workers should be registered and readable
 		registry_new.metric(:connections_total).set(100)
@@ -499,9 +499,9 @@ describe Async::Service::Supervisor::UtilizationMonitor do
 		resize_controller.define_singleton_method(:state){{name: "filler"}}
 		resize_controller.define_singleton_method(:worker){resize_worker}
 		
-		size_before_resize = small_monitor.instance_variable_get(:@store).size
+		size_before_resize = small_monitor.store.size
 		small_monitor.register(resize_controller)
-		size_after_resize = small_monitor.instance_variable_get(:@store).size
+		size_after_resize = small_monitor.store.size
 		
 		# Confirm the resize actually happened
 		expect(size_after_resize).to be > size_before_resize

@@ -36,6 +36,9 @@ module Async
 					@guard = Mutex.new
 				end
 				
+				# @attribute [Async::Utilization::SegmentStore] The shared utilization segment store.
+				attr :store
+				
 				# Register a worker with the utilization monitor.
 				#
 				# Allocates a segment of shared memory and instructs the worker
